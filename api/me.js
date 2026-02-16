@@ -8,7 +8,15 @@ export default function handler(req, res) {
 
   try {
     const user = jwt.verify(token, process.env.JWT_SECRET);
-    res.json({ authenticated: true, user });
+    res.json({
+  authenticated: true,
+  user: {
+    id: user.id,
+    username: user.username,
+    avatar: user.avatar
+  }
+});
+  
   } catch {
     res.json({ authenticated: false });
   }
