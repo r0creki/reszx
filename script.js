@@ -488,6 +488,10 @@ async function updateMemberCount() {
     }
 }
 
+function authorizeDiscord() {
+    window.location.href = "/api/login";
+}
+
 // ===== EXPORT =====
 window.switchTab = switchTab;
 window.openAuthModal = openAuthModal;
