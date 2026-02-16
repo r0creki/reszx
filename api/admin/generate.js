@@ -26,6 +26,9 @@ function parseDuration(input) {
 
 export default async function handler(req, res) {
 
+  console.log("ENV ADMIN:", process.env.ADMIN_KEY);
+console.log("HEADER ADMIN:", req.headers["x-admin-key"]);
+
   // 🔒 Allow POST only
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method Not Allowed" });
@@ -73,6 +76,7 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: "Internal Server Error" });
   }
 }
+
 
 
 
