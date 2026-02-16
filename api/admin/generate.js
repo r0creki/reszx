@@ -1,3 +1,6 @@
+console.log("ENV ADMIN:", process.env.ADMIN_KEY);
+console.log("HEADER ADMIN:", req.headers["x-admin-key"]);
+
 import { supabase } from "../../lib/supabase.js";
 
 function generateKey() {
@@ -73,4 +76,5 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: "Internal Server Error" });
   }
 }
+
 
