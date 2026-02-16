@@ -457,6 +457,15 @@ function showAccessDenied() {
     }, 1000);
 }
 
+function handleWorkinkClick() {
+    if (!isAuthenticated) {
+        openAuthModal();
+        return;
+    }
+
+    window.location.href = "https://work.ink/YOUR_LINK";
+}
+
 // ===== ENCRYPTION =====
 function encryptPaths() {
     document.querySelectorAll('.encrypted-url').forEach(el => {
