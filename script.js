@@ -46,44 +46,49 @@ function updateScriptStats() {
 }
 
 async function checkAuth() {
-    if (!data.authenticated) {
-    isAuthenticated = false;
-    currentUser = null;
-}
-
     try {
-        const res = await fetch("/api/me");
+        const res = await fetch("/api/me", {
+            credentials: "include"
+        });
+
         const data = await res.json();
 
-        if (data.authenticated) {
-            isAuthenticated = true;
-            currentUser = data.user;
+        // =========================
+        // ❌ NOT AUTHENTICATED
+        // =========================
+        if (!data.authenticated) {
+            isAuthenticated = false;
+            currentUser = null;
 
-            document.querySelectorAll('.auth-required').forEach(e => e.style.display = 'none');
-            document.querySelectorAll('.key-input-field').forEach(e => e.disabled = false);
-            document.querySelectorAll('.redeem-btn').forEach(e => e.disabled = false);
+            document.querySelectorAll('#loginLabel')
+                .forEach(l => l.textContent = "Login");
 
-            const labels = document.querySelectorAll('#loginLabel');
-            labels.forEach(l => l.textContent = data.user.username);
-
-            const avatarUrl = `https://cdn.discordapp.com/avatars/${data.user.id}/${data.user.avatar}.png`;
-
-            const dropdown = document.getElementById("userDropdown");
-            if (dropdown) {
-                dropdown.innerHTML = `
-                    <div class="profile-card">
-                        <img src="${avatarUrl}" class="profile-avatar">
-                        <div class="profile-info">
-                            <div class="profile-name">${data.user.username}</div>
-                            <div class="profile-id">ID: ${data.user.id}</div>
-                        </div>
-                        <button class="logout-btn" onclick="logout()">Logout</button>
-                    </div>
-                `;
-            }
-
+            return;
         }
-    } catch {}
+
+        // =========================
+        // ✅ AUTHENTICATED
+        // =========================
+        isAuthenticated = true;
+        currentUser = data.user;
+
+        document.querySelectorAll('.auth-required')
+            .forEach(e => e.style.display = 'none');
+
+        document.querySelectorAll('.key-input-field')
+            .forEach(e => e.disabled = false);
+
+        document.querySelectorAll('.redeem-btn')
+            .forEach(e => e.disabled = false);
+
+        document.querySelectorAll('#loginLabel')
+            .forEach(l => l.textContent = data.user.username);
+
+    } catch (err) {
+        console.error("Auth check failed");
+        isAuthenticated = false;
+        currentUser = null;
+    }
 }
 
 function closeSuccessModal() {
@@ -522,16 +527,9 @@ async function logout() {
         credentials: "include"
     });
 
-    // reset state manual
     isAuthenticated = false;
     currentUser = null;
 
-    // ganti label navbar
-    document.querySelectorAll('#loginLabel').forEach(l => {
-        l.textContent = "Login";
-    });
-
-    // reload
     window.location.href = "/";
 }
 
@@ -586,20 +584,24 @@ function handleUserNavClick() {
 function openProfileModal() {
     if (!currentUser) return;
 
-    document.getElementById("profileAvatar").src =
-        `https://cdn.discordapp.com/avatars/${currentUser.id}/${currentUser.avatar}.png`;
+    let avatarUrl;
 
+    if (currentUser.avatar) {
+        avatarUrl =
+            `https://cdn.discordapp.com/avatars/${currentUser.id}/${currentUser.avatar}.png?size=256`;
+    } else {
+        const index = parseInt(currentUser.id) % 5;
+        avatarUrl =
+            `https://cdn.discordapp.com/embed/avatars/${index}.png`;
+    }
+
+    document.getElementById("profileAvatar").src = avatarUrl;
     document.getElementById("profileUsername").textContent =
         currentUser.username;
-
     document.getElementById("profileId").textContent =
         `Discord ID: ${currentUser.id}`;
 
     document.getElementById("profileModal").classList.add("active");
-}
-
-function closeProfileModal() {
-    document.getElementById("profileModal").classList.remove("active");
 }
 
 // ===== EXPORT =====
