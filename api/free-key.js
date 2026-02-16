@@ -7,27 +7,26 @@ import jwt from "jsonwebtoken";
 export default async function handler(req, res) {
 
   // ==============================
-  // MODE 1: WORKINK CALLBACK
+  // 🔁 WORKINK CALLBACK MODE
   // ==============================
-
-  if (req.query.done === "1") {
+  if (req.query.from === "workink") {
 
     const token = jwt.sign(
-      { workink: true },
+      { passed: true, time: Date.now() },
       process.env.JWT_SECRET,
       { expiresIn: "5m" }
     );
 
     res.setHeader(
       "Set-Cookie",
-      `workink_pass=${token}; HttpOnly; Path=/; Secure; SameSite=Lax`
+      `workink_pass=${token}; HttpOnly; Path=/; Max-Age=300`
     );
 
     return res.redirect("/?generate=free");
   }
 
   // ==============================
-  // MODE 2: GENERATE KEY
+  // 🔐 NORMAL FREE KEY GENERATION
   // ==============================
 
   if (req.method !== "GET")
@@ -35,14 +34,15 @@ export default async function handler(req, res) {
 
   try {
 
-    const loginToken = req.cookies.token;
-    if (!loginToken)
+    const token = req.cookies.token;
+    if (!token)
       return res.status(401).json({ error: "Unauthorized" });
 
-    const user = verifyUser(loginToken);
+    const user = verifyUser(token);
     if (!user)
       return res.status(401).json({ error: "Invalid Token" });
 
+    // ✅ wajib lewat workink
     const workinkToken = req.cookies.workink_pass;
     if (!workinkToken)
       return res.status(403).json({ error: "Workink required" });
@@ -53,6 +53,12 @@ export default async function handler(req, res) {
       return res.status(403).json({ error: "Invalid Workink session" });
     }
 
+    const ip =
+      req.headers["x-forwarded-for"]?.split(",")[0] ||
+      req.socket?.remoteAddress ||
+      "Unknown";
+
+    // cek existing active key
     const { data: existing } = await supabase
       .from("keys")
       .select("*")
@@ -60,9 +66,11 @@ export default async function handler(req, res) {
       .gt("expires_at", Date.now())
       .single();
 
-    if (existing)
+    if (existing) {
       return res.json({ key: existing.key });
+    }
 
+    // generate key
     const key =
       "PEVO-" +
       crypto.randomBytes(6).toString("hex").toUpperCase();
@@ -79,17 +87,26 @@ export default async function handler(req, res) {
       used: false
     });
 
-    res.setHeader(
-      "Set-Cookie",
-      "workink_pass=; HttpOnly; Path=/; Max-Age=0"
-    );
+    if (process.env.DISCORD_WEBHOOK) {
+      await axios.post(process.env.DISCORD_WEBHOOK, {
+        embeds: [{
+          title: "🔑 Free Key Generated",
+          color: 5763719,
+          fields: [
+            { name: "User", value: user.username, inline: true },
+            { name: "Discord ID", value: user.id, inline: true },
+            { name: "IP", value: ip },
+            { name: "Key", value: key }
+          ],
+          timestamp: new Date().toISOString()
+        }]
+      });
+    }
 
-    return res.json({ key });
+    res.json({ key });
 
   } catch (err) {
     console.error("FREE KEY ERROR:", err);
-    return res.status(500).json({ error: "Server Error" });
+    res.status(500).json({ error: "Server Error" });
   }
 }
-
-// test
