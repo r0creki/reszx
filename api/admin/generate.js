@@ -1,4 +1,4 @@
-import { supabase } from "../../../lib/supabase.js";
+import { supabase } from "../../lib/supabase.js";
 
 function generateKey() {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -73,3 +73,4 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: "Internal Server Error" });
   }
 }
+
