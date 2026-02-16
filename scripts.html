@@ -69,7 +69,7 @@
             <path d="M12 17h.01"></path>
         </svg>
     </a>
-    <button class="mobile-nav-item" onclick="openAuthModal()">
+    <button class="mobile-nav-item" onclick="handleUserNavClick()">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="12" cy="8" r="4"></circle>
             <path d="M5.3 18.3c.6-2 2.4-3.3 4.7-3.3h4c2.3 0 4.1 1.3 4.7 3.3"></path>
@@ -194,6 +194,25 @@
             <a href="index.html" class="denied-btn">Back to Home</a>
         </div>
     </div>
+
+    <div class="modal-overlay" id="profileModal">
+    <div class="modal">
+        <button class="modal-close" onclick="closeProfileModal()">×</button>
+
+        <div style="display:flex;flex-direction:column;align-items:center;gap:1rem;">
+            <img id="profileAvatar"
+                 src=""
+                 style="width:80px;height:80px;border-radius:50%;border:2px solid #3b82f6;" />
+
+            <h2 id="profileUsername">Username</h2>
+            <p id="profileId" style="color:#aaa;font-size:0.85rem;"></p>
+
+            <button class="modal-btn" onclick="logout()">
+                Logout
+            </button>
+        </div>
+    </div>
+</div>
 
     <script src="script.js"></script>
     <div class="user-dropdown" id="userDropdown">
