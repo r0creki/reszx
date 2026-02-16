@@ -6,7 +6,5 @@ export default async function handler(req, res) {
     scope: "identify"
   });
 
-  res.redirect(
-    `https://discord.com/oauth2/authorize?${params}`
-  );
+  res.redirect(`https://discord.com/oauth2/authorize?${params}`);
 }
