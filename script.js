@@ -512,8 +512,22 @@ function authorizeDiscord() {
 }
 
 async function logout() {
-    await fetch("/api/logout");
-    window.location.reload();
+    await fetch("/api/logout", {
+        method: "GET",
+        credentials: "include"
+    });
+
+    // reset state manual
+    isAuthenticated = false;
+    currentUser = null;
+
+    // ganti label navbar
+    document.querySelectorAll('#loginLabel').forEach(l => {
+        l.textContent = "Login";
+    });
+
+    // reload
+    window.location.href = "/";
 }
 
 async function checkGenerateFromRedirect() {
