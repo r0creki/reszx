@@ -9,9 +9,11 @@ export default async function handler(req, res) {
     return res.json({ valid: false });
 
   const ip =
-    req.headers["x-forwarded-for"]?.split(",")[0] ||
-    req.socket?.remoteAddress ||
-    "Unknown";
+  req.headers["x-real-ip"] ||
+  req.headers["x-forwarded-for"]?.split(",")[0] ||
+  req.headers["x-vercel-forwarded-for"]?.split(",")[0] ||
+  req.socket?.remoteAddress ||
+  "Unknown";
 
   const hashedHwid = crypto
     .createHash("sha256")
