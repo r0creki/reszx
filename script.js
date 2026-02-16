@@ -46,6 +46,11 @@ function updateScriptStats() {
 }
 
 async function checkAuth() {
+    if (!data.authenticated) {
+    isAuthenticated = false;
+    currentUser = null;
+}
+
     try {
         const res = await fetch("/api/me");
         const data = await res.json();
