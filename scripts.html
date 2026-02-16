@@ -39,7 +39,7 @@
         </svg>
         <span class="nav-label">FAQ</span>
     </a>
-    <button class="nav-item" onclick="openAuthModal()">
+    <button class="nav-item" id="userNavBtn" onclick="handleUserNavClick()">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="12" cy="8" r="4"></circle>
             <path d="M5.3 18.3c.6-2 2.4-3.3 4.7-3.3h4c2.3 0 4.1 1.3 4.7 3.3"></path>
@@ -196,5 +196,9 @@
     </div>
 
     <script src="script.js"></script>
+    <div class="user-dropdown" id="userDropdown">
+    <button onclick="logout()">Logout</button>
+</div>
+
 </body>
 </html>
