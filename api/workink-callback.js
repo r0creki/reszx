@@ -22,3 +22,5 @@ export default function handler(req, res) {
   // redirect balik ke homepage dengan trigger generate
   res.redirect("/?generate=free");
 }
+
+//
