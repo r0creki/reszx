@@ -12,6 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
     checkHash();
     updateMemberCount();
     encryptPaths();
+    checkGenerateFromRedirect();
     
     // Load scripts if on scripts page
     if (document.getElementById('scriptsGrid')) {
@@ -59,6 +60,23 @@ async function checkAuth() {
 
             const labels = document.querySelectorAll('#loginLabel');
             labels.forEach(l => l.textContent = data.user.username);
+
+            const avatarUrl = `https://cdn.discordapp.com/avatars/${data.user.id}/${data.user.avatar}.png`;
+
+            const dropdown = document.getElementById("userDropdown");
+            if (dropdown) {
+                dropdown.innerHTML = `
+                    <div class="profile-card">
+                        <img src="${avatarUrl}" class="profile-avatar">
+                        <div class="profile-info">
+                            <div class="profile-name">${data.user.username}</div>
+                            <div class="profile-id">ID: ${data.user.id}</div>
+                        </div>
+                        <button class="logout-btn" onclick="logout()">Logout</button>
+                    </div>
+                `;
+            }
+
         }
     } catch {}
 }
@@ -301,7 +319,7 @@ function copyLoaderScript() {
         return;
     }
     
-    const script = 'loadstring(game:HttpGet("https://pevolution.vercel.app/api/script/loader"))()';
+    const script = 'loadstring(game:HttpGet("https://reszx.vercel.app/api/script/loader"))()';
     navigator.clipboard.writeText(script).then(() => {
         const btn = document.querySelector('.copy-btn');
         const original = btn.innerHTML;
@@ -381,7 +399,7 @@ function loadScripts() {
                     </div>
                     <div class="script-code">
                         <div class="code-preview">
-                            <span class="code-function">loadstring</span>(<span class="code-function">game</span>:<span class="code-method">HttpGet</span>("<span class="code-string encrypted-url">https://pevolution.vercel.app/api/script/${script.id}</span>"))()
+                            <span class="code-function">loadstring</span>(<span class="code-function">game</span>:<span class="code-method">HttpGet</span>("<span class="code-string encrypted-url">https://reszx.vercel.app/api/script/${script.id}</span>"))()
                         </div>
                         <button class="copy-btn small" onclick="copyScript('${script.id}')" ${!isWorking ? 'disabled' : ''}>
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -426,7 +444,7 @@ function copyScript(id) {
         return;
     }
     
-    const script = `loadstring(game:HttpGet("https://pevolution.vercel.app/api/script/${id}"))()`;
+    const script = `loadstring(game:HttpGet("https://reszx.vercel.app/api/script/${id}"))()`;
     
     if (Math.random() < 0.1) {
         showAccessDenied();
@@ -463,7 +481,8 @@ function handleWorkinkClick() {
         return;
     }
 
-    window.location.href = "https://work.ink/YOUR_LINK";
+    window.location.href =
+        "https://work.ink/YOUR_LINK?redirect=https://reszx.vercel.app/?generate=free";
 }
 
 // ===== ENCRYPTION =====
@@ -492,20 +511,77 @@ function authorizeDiscord() {
     window.location.href = "/api/login";
 }
 
+async function logout() {
+    await fetch("/api/logout");
+    window.location.reload();
+}
+
+async function checkGenerateFromRedirect() {
+    const params = new URLSearchParams(window.location.search);
+
+    if (params.get("generate") !== "free") return;
+    if (!isAuthenticated) return;
+
+    try {
+        const res = await fetch("/api/free-key");
+        const data = await res.json();
+
+        if (data.key) {
+            showKeyModal(data.key, "2 Hours");
+
+            // Bersihkan query biar gak regenerate lagi
+            window.history.replaceState({}, document.title, "/");
+        }
+    } catch (err) {
+        console.error("Failed to generate key");
+    }
+}
+
+function showKeyModal(key, duration) {
+    document.getElementById("generatedKey").textContent = key;
+    document.getElementById("keyDuration").textContent =
+        "Duration: " + duration;
+
+    document.getElementById("keyModal").classList.add("active");
+}
+
+function closeKeyModal() {
+    document.getElementById("keyModal").classList.remove("active");
+}
+
+function copyGeneratedKey() {
+    const key = document.getElementById("keyValue").textContent;
+    navigator.clipboard.writeText(key);
+    alert("✓ Key copied!");
+}
+
 function handleUserNavClick() {
     if (!isAuthenticated) {
         openAuthModal();
         return;
     }
 
-    document.getElementById("userDropdown")?.classList.toggle("active");
+    openProfileModal();
 }
 
-async function logout() {
-    await fetch("/api/logout");
-    window.location.reload();
+function openProfileModal() {
+    if (!currentUser) return;
+
+    document.getElementById("profileAvatar").src =
+        `https://cdn.discordapp.com/avatars/${currentUser.id}/${currentUser.avatar}.png`;
+
+    document.getElementById("profileUsername").textContent =
+        currentUser.username;
+
+    document.getElementById("profileId").textContent =
+        `Discord ID: ${currentUser.id}`;
+
+    document.getElementById("profileModal").classList.add("active");
 }
 
+function closeProfileModal() {
+    document.getElementById("profileModal").classList.remove("active");
+}
 
 // ===== EXPORT =====
 window.switchTab = switchTab;
@@ -519,3 +595,4 @@ window.toggleFaq = toggleFaq;
 window.handlePlanClick = handlePlanClick;
 window.filterScripts = filterScripts;
 window.copyScript = copyScript;
+window.closeKeyModal = closeKeyModal;
