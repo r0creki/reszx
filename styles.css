@@ -1780,3 +1780,35 @@ h1 {
     color: #ffcc00;
 }
 
+.user-dropdown {
+    position: fixed;
+    bottom: 5.5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(20,20,31,0.95);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 0.75rem;
+    padding: 0.5rem;
+    display: none;
+    z-index: 200;
+    backdrop-filter: blur(10px);
+}
+
+.user-dropdown.active {
+    display: block;
+}
+
+.user-dropdown button {
+    background: none;
+    border: none;
+    color: #ff4d4d;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 0.5rem 1rem;
+    width: 100%;
+}
+
+.user-dropdown button:hover {
+    background: rgba(255,0,0,0.1);
+    border-radius: 0.5rem;
+}
