@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pevolution | Script Library</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="icon" type="image/png" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3ClinearGradient id='grad' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%233b82f6'/%3E%3Cstop offset='100%25' stop-color='%2360a5fa'/%3E%3C/linearGradient%3E%3Crect width='100' height='100' rx='20' fill='url(%23grad)'/%3E%3Ctext x='50' y='70' font-size='60' font-weight='bold' text-anchor='middle' fill='%230a0a0f' font-family='Arial'%3EP%3C/text%3E%3C/svg%3E">
+</head>
+<body>
+    <!-- Dynamic Background -->
+    <div class="bg-orb"></div>
+    <div class="bg-grid"></div>
+    <div class="bg-particles" id="particles"></div>
+
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="nav-logo">
+                <div class="logo-box">
+                    <span>P</span>
+                </div>
+                <div class="logo-text">
+                    <span class="text-light">pevo</span>
+                    <span class="text-blue">lution</span>
+                </div>
+            </a>
+            
+            <div class="nav-links">
+                <a href="index.html" class="nav-link">Home</a>
+                <a href="library.html" class="nav-link active">Library</a>
+                <a href="index.html#access" class="nav-link">Access</a>
+                <a href="index.html#plans" class="nav-link">Plans</a>
+                <a href="index.html#help" class="nav-link">Help</a>
+            </div>
+            
+            <div class="nav-actions">
+                <a href="https://discord.gg/BPBvVKK94r" target="_blank" class="discord-badge">
+                    <svg width="18" height="18" viewBox="0 0 127.14 96.36">
+                        <path d="M107.7,8.07A105.15,105.15,0,0,0,81.47,0a72.06,72.06,0,0,0-3.36,6.83A97.68,97.68,0,0,0,49,6.83,72.37,72.37,0,0,0,45.64,0,105.89,105.89,0,0,0,19.39,8.09C2.79,32.65-1.71,56.6.54,80.21h0A105.73,105.73,0,0,0,32.71,96.36,77.11,77.11,0,0,0,39.6,85.25a68.42,68.42,0,0,1-10.85-5.18c.91-.66,1.8-1.34,2.66-2a75.57,75.57,0,0,0,64.32,0c.87.71,1.76,1.39,2.66,2a68.68,68.68,0,0,1-10.87,5.19,77,77,0,0,0,6.89,11.1A105.25,105.25,0,0,0,126.6,80.22c1.24-21.43-8.88-46.12-18.9-72.15Z"></path>
+                    </svg>
+                    <span>2.1k members</span>
+                </a>
+                <button class="menu-btn" onclick="toggleMobileMenu()">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 12h18M3 6h18M3 18h18"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Mobile Menu -->
+        <div class="mobile-menu" id="mobileMenu">
+            <a href="index.html" class="mobile-link">Home</a>
+            <a href="library.html" class="mobile-link active">Library</a>
+            <a href="index.html#access" class="mobile-link" onclick="closeMobileMenu()">Access</a>
+            <a href="index.html#plans" class="mobile-link" onclick="closeMobileMenu()">Plans</a>
+            <a href="index.html#help" class="mobile-link" onclick="closeMobileMenu()">Help</a>
+            <a href="https://discord.gg/BPBvVKK94r" target="_blank" class="mobile-link discord">Join Discord</a>
+        </div>
+    </nav>
+
+    <main>
+        <!-- Library Header -->
+        <section class="library-header">
+            <div class="container">
+                <div class="header-content">
+                    <div class="chip">📚 SCRIPT COLLECTION</div>
+                    <h1>Game <span class="gradient-text">Library</span></h1>
+                    <p class="header-description">
+                        Browse our curated collection of scripts for popular Roblox games. 
+                        Each script is tested and verified before release.
+                    </p>
+                    
+                    <div class="library-stats">
+                        <div class="stat-item">
+                            <span class="stat-number" id="totalGames">0</span>
+                            <span class="stat-label">Games</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-number" id="totalExecutions">0</span>
+                            <span class="stat-label">Executions</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-number">100%</span>
+                            <span class="stat-label">Uptime</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Search Bar -->
+        <section class="search-section">
+            <div class="container">
+                <div class="search-container">
+                    <div class="search-wrapper">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <path d="m21 21-4.3-4.3"></path>
+                        </svg>
+                        <input type="text" id="searchField" placeholder="Search games by name or description..." onkeyup="filterLibrary()">
+                    </div>
+                    <div class="filter-group">
+                        <select id="statusFilter" class="filter-select" onchange="filterLibrary()">
+                            <option value="all">All Scripts</option>
+                            <option value="working">Working Only</option>
+                            <option value="maintenance">Maintenance</option>
+                        </select>
+                        <button class="filter-btn" onclick="filterLibrary()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M10 20a1 1 0 0 0 .553.895l2 1A1 1 0 0 0 14 21v-7a2 2 0 0 1 .517-1.341L21.74 4.67A1 1 0 0 0 21 3H3a1 1 0 0 0-.742 1.67l7.225 7.989A2 2 0 0 1 10 14z"></path>
+                            </svg>
+                            Apply
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Scripts Grid -->
+        <section class="library-grid-section">
+            <div class="container">
+                <div class="scripts-grid" id="scriptsGrid">
+                    <!-- Dynamic scripts will be loaded here -->
+                </div>
+                
+                <!-- Loading State -->
+                <div class="loading-state" id="loadingState">
+                    <div class="loader"></div>
+                    <p>Loading scripts...</p>
+                </div>
+                
+                <!-- Empty State -->
+                <div class="empty-state" id="emptyState" style="display: none;">
+                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" x2="12" y1="8" y2="12"></line>
+                        <circle cx="12" cy="16" r="1"></circle>
+                    </svg>
+                    <h3>No scripts found</h3>
+                    <p>Try adjusting your search or filter</p>
+                    <button class="reset-btn" onclick="resetFilters()">Reset filters</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Request Section -->
+        <section class="request-section">
+            <div class="container">
+                <div class="request-card">
+                    <div class="request-icon">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" x2="12" y1="15" y2="3"></line>
+                        </svg>
+                    </div>
+                    <h2>Missing a game?</h2>
+                    <p>We're constantly expanding our library. Let us know what you need.</p>
+                    <a href="https://discord.gg/BPBvVKK94r" target="_blank" class="request-action">
+                        <svg width="18" height="18" viewBox="0 0 127.14 96.36">
+                            <path d="M107.7,8.07A105.15,105.15,0,0,0,81.47,0a72.06,72.06,0,0,0-3.36,6.83A97.68,97.68,0,0,0,49,6.83,72.37,72.37,0,0,0,45.64,0,105.89,105.89,0,0,0,19.39,8.09C2.79,32.65-1.71,56.6.54,80.21h0A105.73,105.73,0,0,0,32.71,96.36,77.11,77.11,0,0,0,39.6,85.25a68.42,68.42,0,0,1-10.85-5.18c.91-.66,1.8-1.34,2.66-2a75.57,75.57,0,0,0,64.32,0c.87.71,1.76,1.39,2.66,2a68.68,68.68,0,0,1-10.87,5.19,77,77,0,0,0,6.89,11.1A105.25,105.25,0,0,0,126.6,80.22c1.24-21.43-8.88-46.12-18.9-72.15Z"></path>
+                        </svg>
+                        Request via Discord
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Recent Updates -->
+        <section class="updates-section">
+            <div class="container">
+                <div class="updates-header">
+                    <h3>📌 Recent Updates</h3>
+                    <a href="#" class="view-all">View all →</a>
+                </div>
+                <div class="updates-grid">
+                    <div class="update-card">
+                        <span class="update-badge">v2.0.0b</span>
+                        <span class="update-game">Violence District</span>
+                        <span class="update-desc">New survivor abilities added</span>
+                        <span class="update-time">2 hours ago</span>
+                    </div>
+                    <div class="update-card">
+                        <span class="update-badge">v2.0.0b</span>
+                        <span class="update-game">Last Letter</span>
+                        <span class="update-desc">Performance improvements</span>
+                        <span class="update-time">5 hours ago</span>
+                    </div>
+                    <div class="update-card">
+                        <span class="update-badge">v1.5.0</span>
+                        <span class="update-game">Solo Hunter</span>
+                        <span class="update-desc">Maintenance mode</span>
+                        <span class="update-time">1 day ago</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-main">
+                <div class="footer-brand">
+                    <div class="footer-logo">
+                        <div class="logo-small">P</div>
+                        <span class="brand-name">pevolution</span>
+                    </div>
+                    <p class="brand-tagline">Next generation Roblox automation tools. Built for performance, designed for stealth.</p>
+                    <div class="social-row">
+                        <a href="https://discord.gg/BPBvVKK94r" target="_blank" class="social-icon">
+                            <svg width="20" height="20" viewBox="0 0 127.14 96.36">
+                                <path d="M107.7,8.07A105.15,105.15,0,0,0,81.47,0a72.06,72.06,0,0,0-3.36,6.83A97.68,97.68,0,0,0,49,6.83,72.37,72.37,0,0,0,45.64,0,105.89,105.89,0,0,0,19.39,8.09C2.79,32.65-1.71,56.6.54,80.21h0A105.73,105.73,0,0,0,32.71,96.36,77.11,77.11,0,0,0,39.6,85.25a68.42,68.42,0,0,1-10.85-5.18c.91-.66,1.8-1.34,2.66-2a75.57,75.57,0,0,0,64.32,0c.87.71,1.76,1.39,2.66,2a68.68,68.68,0,0,1-10.87,5.19,77,77,0,0,0,6.89,11.1A105.25,105.25,0,0,0,126.6,80.22c1.24-21.43-8.88-46.12-18.9-72.15Z"></path>
+                            </svg>
+                        </a>
+                        <a href="#" class="social-icon">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"></path>
+                                <path d="M9 18c-4.51 2-5-2-7-2"></path>
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="footer-links">
+                    <div class="link-column">
+                        <h4>Product</h4>
+                        <ul>
+                            <li><a href="library.html">Library</a></li>
+                            <li><a href="index.html#plans">Pricing</a></li>
+                            <li><a href="index.html#access">Access</a></li>
+                        </ul>
+                    </div>
+                    <div class="link-column">
+                        <h4>Resources</h4>
+                        <ul>
+                            <li><a href="index.html#help">FAQ</a></li>
+                            <li><a href="#">Documentation</a></li>
+                            <li><a href="#">Status</a></li>
+                        </ul>
+                    </div>
+                    <div class="link-column">
+                        <h4>Legal</h4>
+                        <ul>
+                            <li><a href="#">Terms</a></li>
+                            <li><a href="#">Privacy</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="footer-bottom">
+                <p>© 2026 pevolution. All rights reserved.</p>
+                <p>Crafted with <span class="heart">❤️</span> by the team</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Auth Modal -->
+    <div class="modal-overlay" id="authModal">
+        <div class="modal">
+            <button class="modal-close" onclick="closeAuthModal()">×</button>
+            <div class="modal-icon">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <circle cx="12" cy="8" r="4"></circle>
+                    <path d="M5.3 18.3c.6-2 2.4-3.3 4.7-3.3h4c2.3 0 4.1 1.3 4.7 3.3"></path>
+                    <circle cx="12" cy="12" r="10"></circle>
+                </svg>
+            </div>
+            <h3>Authentication Required</h3>
+            <p class="modal-text">Connect with Discord to unlock key redemption and premium features.</p>
+            
+            <button class="discord-auth-btn" onclick="redirectToDiscord()">
+                <svg width="20" height="20" viewBox="0 0 127.14 96.36">
+                    <path d="M107.7,8.07A105.15,105.15,0,0,0,81.47,0a72.06,72.06,0,0,0-3.36,6.83A97.68,97.68,0,0,0,49,6.83,72.37,72.37,0,0,0,45.64,0,105.89,105.89,0,0,0,19.39,8.09C2.79,32.65-1.71,56.6.54,80.21h0A105.73,105.73,0,0,0,32.71,96.36,77.11,77.11,0,0,0,39.6,85.25a68.42,68.42,0,0,1-10.85-5.18c.91-.66,1.8-1.34,2.66-2a75.57,75.57,0,0,0,64.32,0c.87.71,1.76,1.39,2.66,2a68.68,68.68,0,0,1-10.87,5.19,77,77,0,0,0,6.89,11.1A105.25,105.25,0,0,0,126.6,80.22c1.24-21.43-8.88-46.12-18.9-72.15Z"></path>
+                </svg>
+                Continue with Discord
+            </button>
+            
+            <p class="modal-note">You'll be redirected to Discord for authorization</p>
+        </div>
+    </div>
+
+    <!-- Access Denied -->
+    <div class="denied-overlay" id="deniedOverlay">
+        <div class="denied-box">
+            <div class="denied-icon">🔒</div>
+            <h3>Access Restricted</h3>
+            <p>This area is protected. Redirecting to safety...</p>
+            <div class="denied-timer"><span id="deniedCountdown">3</span>s</div>
+            <a href="index.html" class="denied-btn">Return home</a>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+    <script>
+        // Library-specific JavaScript
+        const scriptDatabase = [
+            {
+                id: 'bf10d3b960442ff45c53ce9a2aa618b5',
+                name: 'Violence District',
+                description: 'Advanced survivor tools and killer tracking. Features ESP, auto objectives, and panic mode.',
+                uses: '15,728',
+                status: 'working',
+                version: 'v2.0.0b',
+                category: 'horror'
+            },
+            {
+                id: '8f7d2c1e5a3b9f4d6e8c2a1b7d4e9f3c',
+                name: 'Last Letter',
+                description: 'Word game assistant with instant solver, word suggestions, and auto-complete functionality.',
+                uses: '235',
+                status: 'working',
+                version: 'v2.0.0b',
+                category: 'puzzle'
+            },
+            {
+                id: '3e8d1b7f4c9a2e6d5b8f1c3a7d4e9f2b',
+                name: 'Solo Hunter',
+                description: 'Complete hunting suite with animal tracking, aim assistance, and loot radar.',
+                uses: '6,432',
+                status: 'maintenance',
+                version: 'v1.5.0',
+                category: 'adventure'
+            },
+            {
+                id: '9d4e2f1c8b7a3d6e5f2c9b8a1d4e7f3c',
+                name: 'Tower Defense',
+                description: 'Auto placement, instant upgrades, and wave skipping. Supports all game modes.',
+                uses: '8,921',
+                status: 'working',
+                version: 'v3.1.2',
+                category: 'strategy'
+            },
+            {
+                id: '2b7e4f1c9d8a3e6f5c2b1d8a7e4f9c3d',
+                name: 'Pet Simulator',
+                description: 'Auto hatch, auto farm, auto sell. Includes exclusive pet radar and coin multiplier.',
+                uses: '24,563',
+                status: 'working',
+                version: 'v4.2.1',
+                category: 'simulator'
+            },
+            {
+                id: '6f3e2d1c8b9a4e7f5c2d1b8a9e4f7c3d',
+                name: 'Blox Fruits',
+                description: 'Complete fruit finder, auto raid, auto farm, and devil fruit sniper.',
+                uses: '31,287',
+                status: 'maintenance',
+                version: 'v5.0.3',
+                category: 'adventure'
+            },
+            {
+                id: '7a4b3c2d1e5f6g7h8i9j0k1l2m3n4o5p',
+                name: 'Arsenal',
+                description: 'Aimbot, wallhack, auto-shoot, and skin changer. Undetected since release.',
+                uses: '12,845',
+                status: 'working',
+                version: 'v2.4.0',
+                category: 'shooter'
+            },
+            {
+                id: '8b5c4d3e2f1g0h9i8j7k6l5m4n3o2p1q',
+                name: 'Jailbreak',
+                description: 'Auto robbery, police radar, vehicle spawner, and teleportation.',
+                uses: '18,432',
+                status: 'working',
+                version: 'v3.0.1',
+                category: 'rpg'
+            },
+            {
+                id: '9c6d5e4f3g2h1i0j9k8l7m6n5o4p3q2r',
+                name: 'MM2',
+                description: 'Murderer finder, sheriff aimbot, and auto coin collection.',
+                uses: '9,876',
+                status: 'working',
+                version: 'v1.8.5',
+                category: 'horror'
+            }
+        ];
+
+        let currentFiltered = [...scriptDatabase];
+
+        function displayScripts() {
+            const grid = document.getElementById('scriptsGrid');
+            const loading = document.getElementById('loadingState');
+            const empty = document.getElementById('emptyState');
+            
+            loading.style.display = 'flex';
+            grid.style.display = 'none';
+            empty.style.display = 'none';
+            
+            setTimeout(() => {
+                loading.style.display = 'none';
+                
+                if (currentFiltered.length === 0) {
+                    grid.style.display = 'none';
+                    empty.style.display = 'block';
+                    return;
+                }
+                
+                grid.style.display = 'grid';
+                
+                let html = '';
+                currentFiltered.forEach(script => {
+                    const isWorking = script.status === 'working';
+                    const scriptUrl = `https://pevolution.vercel.app/api/script/${script.id}`;
+                    
+                    html += `
+                        <div class="script-item ${isWorking ? '' : 'maintenance'}">
+                            <div class="script-head">
+                                <div>
+                                    <h3 class="script-name">${script.name}</h3>
+                                    <span class="script-version">${script.version}</span>
+                                </div>
+                                <span class="script-badge ${script.status}">
+                                    ${script.status === 'working' ? 'Active' : 'Maintenance'}
+                                </span>
+                            </div>
+                            
+                            <p class="script-desc">${script.description}</p>
+                            
+                            <div class="script-meta">
+                                <span class="meta-uses">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <path d="M12 6v6l4 2"></path>
+                                    </svg>
+                                    ${script.uses} executions
+                                </span>
+                                <span class="meta-cat">${script.category}</span>
+                            </div>
+                            
+                            <div class="script-execution">
+                                <div class="execution-code">
+                                    <span class="exec-function">loadstring</span>(
+                                    <span class="exec-function">game</span>:<span class="exec-method">HttpGet</span>(
+                                    <span class="exec-string">"<span class="blur-text">${scriptUrl}</span>"</span>))()
+                                </div>
+                                <button class="exec-copy" onclick="copyScript('${script.id}')" ${!isWorking ? 'disabled' : ''}>
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect>
+                                        <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path>
+                                    </svg>
+                                    Copy
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                grid.innerHTML = html;
+                updateStats();
+            }, 800);
+        }
+
+        function filterLibrary() {
+            const searchTerm = document.getElementById('searchField').value.toLowerCase();
+            const statusFilter = document.getElementById('statusFilter').value;
+            
+            currentFiltered = scriptDatabase.filter(script => {
+                const matchesSearch = script.name.toLowerCase().includes(searchTerm) || 
+                                     script.description.toLowerCase().includes(searchTerm);
+                const matchesStatus = statusFilter === 'all' || script.status === statusFilter;
+                return matchesSearch && matchesStatus;
+            });
+            
+            displayScripts();
+        }
+
+        function resetFilters() {
+            document.getElementById('searchField').value = '';
+            document.getElementById('statusFilter').value = 'all';
+            currentFiltered = [...scriptDatabase];
+            displayScripts();
+        }
+
+        function updateStats() {
+            document.getElementById('totalGames').textContent = scriptDatabase.length;
+            
+            const total = scriptDatabase.reduce((acc, s) => {
+                return acc + parseInt(s.uses.replace(',', ''));
+            }, 0);
+            document.getElementById('totalExecutions').textContent = total.toLocaleString();
+        }
+
+        function copyScript(id) {
+            const script = `loadstring(game:HttpGet("https://pevolution.vercel.app/api/script/${id}"))()`;
+            
+            // 10% chance to trigger access denied (simulate protection)
+            if (Math.random() < 0.1) {
+                document.getElementById('deniedOverlay').classList.add('active');
+                let seconds = 3;
+                const timer = setInterval(() => {
+                    seconds--;
+                    document.getElementById('deniedCountdown').textContent = seconds;
+                    if (seconds <= 0) {
+                        clearInterval(timer);
+                        window.location.href = 'index.html';
+                    }
+                }, 1000);
+                return;
+            }
+            
+            navigator.clipboard.writeText(script).then(() => {
+                alert('✓ Script copied to clipboard');
+            });
+        }
+
+        // Initialize
+        displayScripts();
+        
+        // Export functions
+        window.filterLibrary = filterLibrary;
+        window.resetFilters = resetFilters;
+        window.copyScript = copyScript;
+    </script>
+</body>
+</html>
