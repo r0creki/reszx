@@ -492,6 +492,21 @@ function authorizeDiscord() {
     window.location.href = "/api/login";
 }
 
+function handleUserNavClick() {
+    if (!isAuthenticated) {
+        openAuthModal();
+        return;
+    }
+
+    document.getElementById("userDropdown")?.classList.toggle("active");
+}
+
+async function logout() {
+    await fetch("/api/logout");
+    window.location.reload();
+}
+
+
 // ===== EXPORT =====
 window.switchTab = switchTab;
 window.openAuthModal = openAuthModal;
