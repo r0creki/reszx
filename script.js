@@ -521,18 +521,6 @@ function authorizeDiscord() {
     window.location.href = "/api/login";
 }
 
-async function logout() {
-    await fetch("/api/logout", {
-        method: "GET",
-        credentials: "include"
-    });
-
-    isAuthenticated = false;
-    currentUser = null;
-
-    window.location.href = "/";
-}
-
 async function checkGenerateFromRedirect() {
     const params = new URLSearchParams(window.location.search);
 
