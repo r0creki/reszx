@@ -17,10 +17,28 @@ function hashIp(ip) {
   return crypto.createHash('sha256').update(ip).digest('hex');
 }
 
+async function cleanupOldSessions() {
+  const expiryTime = Date.now() - 900000; // 15 menit
+  await supabase
+    .from("workink_sessions")
+    .delete()
+    .lt("created_at", expiryTime)
+    .eq("used", false);
+  
+  await supabase
+    .from("pending_tokens")
+    .delete()
+    .lt("created_at", expiryTime)
+    .eq("used", false);
+}
+
 export default async function handler(req, res) {
   const { action } = req.query;
 
   try {
+    // Cleanup session lama (jalankan di background)
+    cleanupOldSessions().catch(() => {});
+
     // Login
     if (action === "login") {
       const params = new URLSearchParams({
@@ -105,13 +123,31 @@ export default async function handler(req, res) {
       });
     }
 
-    // Workink - Generate Session
+    // Workink - Generate Session (15 MENIT)
     if (action === "workink") {
       const token = req.cookies.token;
       if (!token) return res.status(401).json({ error: "Unauthorized" });
 
       const user = verifyUser(token);
       if (!user) return res.status(401).json({ error: "Invalid token" });
+
+      // Cek apakah user sudah punya session aktif
+      const { data: existingSession } = await supabase
+        .from("workink_sessions")
+        .select("*")
+        .eq("discord_id", user.id)
+        .eq("used", false)
+        .gt("created_at", Date.now() - 900000)
+        .maybeSingle();
+
+      if (existingSession) {
+        // Gunakan session yang sudah ada
+        res.setHeader("Set-Cookie", `workink_session=${existingSession.session_id}; HttpOnly; Path=/; Max-Age=900; SameSite=Lax; Secure`);
+        return res.json({
+          success: true,
+          workink_url: `https://work.ink/2jhr/pevolution-key`
+        });
+      }
 
       const sessionId = crypto.randomBytes(16).toString('hex');
       const ip = req.headers['x-forwarded-for']?.split(',')[0] || req.socket.remoteAddress || 'Unknown';
@@ -124,7 +160,8 @@ export default async function handler(req, res) {
         used: false
       });
 
-      res.setHeader("Set-Cookie", `workink_session=${sessionId}; HttpOnly; Path=/; Max-Age=300; SameSite=Lax; Secure`);
+      // Cookie 15 MENIT (900 detik)
+      res.setHeader("Set-Cookie", `workink_session=${sessionId}; HttpOnly; Path=/; Max-Age=900; SameSite=Lax; Secure`);
 
       return res.json({
         success: true,
@@ -149,10 +186,9 @@ export default async function handler(req, res) {
       return res.json({ valid: true });
     }
 
-    // Workink Callback - Destination URL
+    // Workink Callback - Destination URL (15 MENIT)
     if (action === "workink-callback") {
       console.log("=== WORKINK CALLBACK ===");
-      console.log("All cookies:", req.cookies);
       
       let sessionId = req.cookies.workink_session;
       const userToken = req.cookies.token;
@@ -163,7 +199,7 @@ export default async function handler(req, res) {
       console.log("User IP:", userIp);
       console.log("Has userToken:", !!userToken);
 
-      // Fallback: cari session berdasarkan IP
+      // Fallback 1: Cari session berdasarkan IP
       if (!sessionId) {
         console.log("No session cookie, trying to find by IP:", userIp);
         const { data: recentSession } = await supabase
@@ -178,6 +214,27 @@ export default async function handler(req, res) {
         if (recentSession) {
           sessionId = recentSession.session_id;
           console.log("Found session by IP:", sessionId);
+        }
+      }
+
+      // Fallback 2: Cari session berdasarkan user token
+      if (!sessionId && userToken) {
+        const user = verifyUser(userToken);
+        if (user) {
+          console.log("Trying to find session by Discord ID:", user.id);
+          const { data: userSession } = await supabase
+            .from("workink_sessions")
+            .select("*")
+            .eq("discord_id", user.id)
+            .eq("used", false)
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+            
+          if (userSession) {
+            sessionId = userSession.session_id;
+            console.log("Found session by Discord ID:", sessionId);
+          }
         }
       }
 
@@ -202,11 +259,13 @@ export default async function handler(req, res) {
         return res.redirect("/?error=already_used");
       }
       
-      if (Date.now() - session.created_at > 300000) {
+      // Validasi 15 MENIT (900000 ms)
+      if (Date.now() - session.created_at > 900000) {
         console.log("Session expired");
         return res.redirect("/?error=session_expired");
       }
 
+      // Cari token pending
       const { data: pendingToken, error: tokenError } = await supabase
         .from("pending_tokens")
         .select("*")
@@ -220,6 +279,14 @@ export default async function handler(req, res) {
         return res.redirect("/?error=no_token");
       }
 
+      // Cek apakah token juga expired (15 menit)
+      if (Date.now() - pendingToken.created_at > 900000) {
+        console.log("Token expired");
+        await supabase.from("pending_tokens").delete().eq("token", pendingToken.token);
+        return res.redirect("/?error=token_expired");
+      }
+
+      // Mark semua sebagai used
       await supabase
         .from("pending_tokens")
         .update({ used: true, used_at: Date.now() })
@@ -230,6 +297,7 @@ export default async function handler(req, res) {
         .update({ used: true, used_at: Date.now(), workink_token: pendingToken.token })
         .eq("session_id", sessionId);
 
+      // Hapus cookie
       res.setHeader("Set-Cookie", `workink_session=; HttpOnly; Path=/; Max-Age=0; SameSite=Lax; Secure`);
 
       if (!userToken) {
@@ -248,6 +316,7 @@ export default async function handler(req, res) {
         return res.redirect("/?error=user_mismatch");
       }
 
+      // Cek apakah user sudah punya key aktif
       const { data: existingKey } = await supabase
         .from("keys")
         .select("*")
@@ -261,8 +330,9 @@ export default async function handler(req, res) {
         return res.redirect(`/?key=${existingKey.key}&exp=${existingKey.expires_at}`);
       }
 
+      // Generate key baru
       const key = generateKey();
-      const expiresAt = Date.now() + 7200000;
+      const expiresAt = Date.now() + 7200000; // 2 jam
       const ipHash = hashIp(userIp);
 
       const { error: insertKeyError } = await supabase.from("keys").insert({
@@ -284,6 +354,7 @@ export default async function handler(req, res) {
         return res.redirect("/?error=key_generation_failed");
       }
 
+      // Update total keys user
       await supabase
         .from("users")
         .update({ total_keys: supabase.raw('COALESCE(total_keys, 0) + 1') })
