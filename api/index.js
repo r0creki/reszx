@@ -107,23 +107,14 @@ export default async function handler(req, res) {
 
     // ========== WORKINK - GENERATE SESSION ==========
     if (action === "workink") {
-      console.log("=== WORKINK GENERATE SESSION ===");
-      
       const token = req.cookies.token;
-      console.log("1. User token exists:", !!token);
-
       if (!token) return res.status(401).json({ error: "Unauthorized" });
 
       const user = verifyUser(token);
-      console.log("2. User verified:", user?.username);
-
       if (!user) return res.status(401).json({ error: "Invalid token" });
 
       const sessionId = crypto.randomBytes(16).toString('hex');
       const ip = req.headers['x-forwarded-for']?.split(',')[0] || req.socket.remoteAddress || 'Unknown';
-      
-      console.log("3. Generated session:", sessionId);
-      console.log("4. User IP:", ip);
 
       await supabase.from("workink_sessions").insert({
         session_id: sessionId,
@@ -133,11 +124,7 @@ export default async function handler(req, res) {
         used: false
       });
 
-      console.log("5. Session saved to database");
-
       res.setHeader("Set-Cookie", `workink_session=${sessionId}; HttpOnly; Path=/; Max-Age=900; SameSite=Lax; Secure`);
-
-      console.log("6. Cookie set, returning URL");
 
       return res.json({
         success: true,
@@ -145,38 +132,17 @@ export default async function handler(req, res) {
       });
     }
 
-    // ========== FREE-KEY - VALIDATION ENDPOINT ==========
+    // ========== FREE-KEY - VALIDATION ENDPOINT (FIXED) ==========
     if (action === "free-key") {
       const { token } = req.query;
       const ip = req.headers['x-forwarded-for']?.split(',')[0] || req.socket.remoteAddress || 'Unknown';
-      
-      console.log("=== FREE-KEY VALIDATION ===");
-      console.log("1. Token received:", token);
-      console.log("2. IP:", ip);
-      console.log("3. Headers:", {
-        'user-agent': req.headers['user-agent'],
-        'x-forwarded-for': req.headers['x-forwarded-for']
-      });
 
       if (!token) {
-        console.log("4. ERROR: No token");
         return res.status(400).json({ valid: false });
       }
 
       try {
-        // Cek apakah token sudah pernah ada
-        const { data: existing } = await supabase
-          .from("pending_tokens")
-          .select("*")
-          .eq("token", token)
-          .maybeSingle();
-
-        if (existing) {
-          console.log("4. Token already exists, returning valid");
-          return res.json({ valid: true });
-        }
-
-        // Simpan token baru
+        // Simpan token tanpa expires_at
         const { error: insertError } = await supabase.from("pending_tokens").insert({
           token: token,
           workink_ip: ip,
@@ -185,56 +151,25 @@ export default async function handler(req, res) {
         });
 
         if (insertError) {
-          console.log("4. Database error:", insertError);
           return res.status(500).json({ valid: false });
         }
 
-        console.log("4. Token saved successfully");
-        console.log("5. Returning { valid: true }");
-        
         return res.json({ valid: true });
         
       } catch (error) {
-        console.log("4. Exception:", error);
         return res.status(500).json({ valid: false });
       }
     }
 
     // ========== WORKINK CALLBACK - DESTINATION URL ==========
     if (action === "workink-callback") {
-      console.log("=== WORKINK CALLBACK ===");
-      
       let sessionId = req.cookies.workink_session;
       const userToken = req.cookies.token;
       const userIp = req.headers['x-forwarded-for']?.split(',')[0] || req.socket.remoteAddress || 'Unknown';
       const userAgent = req.headers['user-agent'] || 'Unknown';
 
-      console.log("1. Session cookie:", sessionId);
-      console.log("2. User IP:", userIp);
-      console.log("3. User token exists:", !!userToken);
-      console.log("4. User Agent:", userAgent);
-
-      // CEK SEMUA PENDING TOKENS DI DATABASE
-      const { data: allTokens, error: tokensError } = await supabase
-        .from("pending_tokens")
-        .select("*")
-        .order("created_at", { ascending: false });
-        
-      console.log("5. All pending tokens in DB:", allTokens);
-      console.log("5a. Tokens error:", tokensError);
-
-      // CEK SEMUA SESSIONS DI DATABASE
-      const { data: allSessions, error: sessionsError } = await supabase
-        .from("workink_sessions")
-        .select("*")
-        .order("created_at", { ascending: false });
-        
-      console.log("6. All sessions in DB:", allSessions);
-      console.log("6a. Sessions error:", sessionsError);
-
-      // Fallback 1: Cari session berdasarkan IP
+      // Fallback: cari session berdasarkan IP
       if (!sessionId) {
-        console.log("7. No session cookie, mencari by IP");
         const { data: recentSession } = await supabase
           .from("workink_sessions")
           .select("*")
@@ -246,18 +181,13 @@ export default async function handler(req, res) {
           
         if (recentSession) {
           sessionId = recentSession.session_id;
-          console.log("7a. Found session by IP:", sessionId);
-        } else {
-          console.log("7b. No session found by IP");
         }
       }
 
-      // Fallback 2: Cari session berdasarkan user token
+      // Fallback: cari session berdasarkan user token
       if (!sessionId && userToken) {
-        console.log("8. No session, mencoba cari by Discord ID");
         const user = verifyUser(userToken);
         if (user) {
-          console.log("8a. User ID from token:", user.id);
           const { data: userSession } = await supabase
             .from("workink_sessions")
             .select("*")
@@ -269,49 +199,34 @@ export default async function handler(req, res) {
             
           if (userSession) {
             sessionId = userSession.session_id;
-            console.log("8b. Found session by Discord ID:", sessionId);
-          } else {
-            console.log("8c. No session found for this Discord ID");
           }
         }
       }
 
       if (!sessionId) {
-        console.log("9. ERROR: No session found anywhere");
         return res.redirect("/?error=invalid_session");
       }
 
-      // Ambil session dari database
       const { data: session, error: sessionError } = await supabase
         .from("workink_sessions")
         .select("*")
         .eq("session_id", sessionId)
         .maybeSingle();
 
-      console.log("10. Session from DB:", session);
-      console.log("10a. Session error:", sessionError);
-
       if (sessionError || !session) {
-        console.log("11. ERROR: Session not in database");
         return res.redirect("/?error=invalid_session");
       }
       
       if (session.used) {
-        console.log("12. ERROR: Session already used");
         return res.redirect("/?error=already_used");
       }
       
       // Validasi 15 menit
-      const age = Date.now() - session.created_at;
-      console.log("13. Session age (ms):", age);
-      
-      if (age > 900000) {
-        console.log("14. ERROR: Session expired");
+      if (Date.now() - session.created_at > 900000) {
         return res.redirect("/?error=session_expired");
       }
 
       // Cari token pending yang belum dipakai
-      console.log("15. Mencari pending token...");
       const { data: pendingToken, error: tokenError } = await supabase
         .from("pending_tokens")
         .select("*")
@@ -320,32 +235,15 @@ export default async function handler(req, res) {
         .limit(1)
         .maybeSingle();
 
-      console.log("16. Latest pending token:", pendingToken);
-      console.log("16a. Token error:", tokenError);
-
       if (tokenError || !pendingToken) {
-        console.log("17. ERROR: No pending token found");
-        
-        // Tampilkan semua token untuk debugging
-        const { data: debugTokens } = await supabase
-          .from("pending_tokens")
-          .select("*");
-        console.log("17a. All tokens in DB:", debugTokens);
-        
         return res.redirect("/?error=no_token");
       }
 
-      // Cek umur token
-      const tokenAge = Date.now() - pendingToken.created_at;
-      console.log("18. Token age (ms):", tokenAge);
-      
-      if (tokenAge > 900000) {
-        console.log("19. ERROR: Token expired");
+      // Cek umur token (15 menit dari created_at)
+      if (Date.now() - pendingToken.created_at > 900000) {
         await supabase.from("pending_tokens").delete().eq("token", pendingToken.token);
         return res.redirect("/?error=token_expired");
       }
-
-      console.log("20. Token valid, memproses...");
 
       // Mark semua sebagai used
       await supabase
@@ -362,20 +260,15 @@ export default async function handler(req, res) {
       res.setHeader("Set-Cookie", `workink_session=; HttpOnly; Path=/; Max-Age=0; SameSite=Lax; Secure`);
 
       if (!userToken) {
-        console.log("21. ERROR: No user token");
         return res.redirect("/?error=login_required");
       }
 
       const user = verifyUser(userToken);
       if (!user) {
-        console.log("22. ERROR: Invalid user token");
         return res.redirect("/?error=invalid_session");
       }
       
       if (session.discord_id !== user.id) {
-        console.log("23. ERROR: User mismatch");
-        console.log("23a. Session Discord ID:", session.discord_id);
-        console.log("23b. User Discord ID:", user.id);
         return res.redirect("/?error=user_mismatch");
       }
 
@@ -389,7 +282,6 @@ export default async function handler(req, res) {
         .maybeSingle();
 
       if (existingKey) {
-        console.log("24. User already has key:", existingKey.key);
         return res.redirect(`/?key=${existingKey.key}&exp=${existingKey.expires_at}`);
       }
 
@@ -397,8 +289,6 @@ export default async function handler(req, res) {
       const key = generateKey();
       const expiresAt = Date.now() + 7200000; // 2 jam
       const ipHash = hashIp(userIp);
-
-      console.log("25. Generating new key:", key);
 
       const { error: insertKeyError } = await supabase.from("keys").insert({
         key,
@@ -415,7 +305,6 @@ export default async function handler(req, res) {
       });
 
       if (insertKeyError) {
-        console.log("26. ERROR: Key generation failed:", insertKeyError);
         return res.redirect("/?error=key_generation_failed");
       }
 
@@ -425,7 +314,6 @@ export default async function handler(req, res) {
         .update({ total_keys: supabase.raw('COALESCE(total_keys, 0) + 1') })
         .eq("discord_id", user.id);
 
-      console.log("27. SUCCESS! Key generated:", key);
       return res.redirect(`/?key=${key}&exp=${expiresAt}`);
     }
 
@@ -441,23 +329,10 @@ export default async function handler(req, res) {
         .select("*")
         .order("created_at", { ascending: false });
         
-      const { data: keys } = await supabase
-        .from("keys")
-        .select("*")
-        .order("created_at", { ascending: false })
-        .limit(10);
-        
       return res.json({
-        cookies: req.cookies,
-        headers: {
-          'user-agent': req.headers['user-agent'],
-          'x-forwarded-for': req.headers['x-forwarded-for']
-        },
-        ip: req.socket.remoteAddress,
         pending_tokens: tokens,
         workink_sessions: sessions,
-        recent_keys: keys,
-        timestamp: Date.now()
+        cookies: req.cookies
       });
     }
 
@@ -552,7 +427,6 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: "Invalid action" });
 
   } catch (error) {
-    console.error("SERVER ERROR:", error);
     return res.status(500).json({ error: "Internal server error" });
   }
 }
