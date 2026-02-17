@@ -11,13 +11,10 @@ export default async function handler(req, res) {
     // Data dari Discord
     const data = response.data;
     
-    // Jumlah member (akurat dari Discord)
+    // Jumlah member
     const memberCount = data.approximate_member_count || 0;
     
-    // Cache 5 menit biar tidak kena rate limit
-    res.setHeader('Cache-Control', 's-maxage=300, stale-while-revalidate');
-    
-    // Kirim hanya count
+    // Kirim response
     res.status(200).json({ 
       count: memberCount
     });
@@ -25,7 +22,7 @@ export default async function handler(req, res) {
   } catch (error) {
     console.error("Discord API error:", error.response?.data || error.message);
     
-    // Fallback jika API error
+    // Fallback jika error
     res.status(200).json({ 
       count: 1880 // Angka default
     });
