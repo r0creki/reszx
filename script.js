@@ -1,7 +1,7 @@
+// State
 let isAuthenticated = false;
 let currentUser = null;
 
-// Initialize
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
     checkAuth();
@@ -28,7 +28,7 @@ function setupNavbarScroll() {
     if (!desktopNav) return;
     
     let lastScrollTop = 0;
-    const scrollThreshold = 100; // Scroll 100px baru muncul
+    const scrollThreshold = 100;
     
     window.addEventListener('scroll', () => {
         const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
@@ -44,7 +44,6 @@ function setupNavbarScroll() {
 }
 
 // ===== AUTHENTICATION =====
-
 function openAuthModal() {
     document.getElementById('authModal')?.classList.add('active');
 }
@@ -70,43 +69,26 @@ function updateScriptStats() {
 
 async function checkAuth() {
     try {
-        // UBAH: /api/me → /api?action=me
         const res = await fetch("/api?action=me", {
             credentials: "include"
         });
 
         const data = await res.json();
 
-        // =========================
-        // ❌ NOT AUTHENTICATED
-        // =========================
         if (!data.authenticated) {
             isAuthenticated = false;
             currentUser = null;
-
-            document.querySelectorAll('#loginLabel')
-                .forEach(l => l.textContent = "Login");
-
+            document.querySelectorAll('#loginLabel').forEach(l => l.textContent = "Login");
             return;
         }
 
-        // =========================
-        // ✅ AUTHENTICATED
-        // =========================
         isAuthenticated = true;
         currentUser = data.user;
 
-        document.querySelectorAll('.auth-required')
-            .forEach(e => e.style.display = 'none');
-
-        document.querySelectorAll('.key-input-field')
-            .forEach(e => e.disabled = false);
-
-        document.querySelectorAll('.redeem-btn')
-            .forEach(e => e.disabled = false);
-
-        document.querySelectorAll('#loginLabel')
-            .forEach(l => l.textContent = data.user.username);
+        document.querySelectorAll('.auth-required').forEach(e => e.style.display = 'none');
+        document.querySelectorAll('.key-input-field').forEach(e => e.disabled = false);
+        document.querySelectorAll('.redeem-btn').forEach(e => e.disabled = false);
+        document.querySelectorAll('#loginLabel').forEach(l => l.textContent = data.user.username);
 
     } catch (err) {
         console.error("Auth check failed");
@@ -348,13 +330,10 @@ async function redeemKey() {
     try {
         showLoading("Redeeming key...");
         
-        // UBAH: /api/redeem → /api?action=redeem
         const response = await fetch("/api?action=redeem", {
             method: "POST",
             credentials: "include",
-            headers: {
-                "Content-Type": "application/json"
-            },
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ key })
         });
         
@@ -558,13 +537,11 @@ async function updateMemberCount() {
 }
 
 function authorizeDiscord() {
-   
     window.location.href = "/api?action=login";
 }
 
 async function checkGenerateFromRedirect() {
     const params = new URLSearchParams(window.location.search);
-
     const key = params.get("key");
     const exp = params.get("exp");
 
@@ -574,16 +551,12 @@ async function checkGenerateFromRedirect() {
     const duration = expireDate.toLocaleString();
 
     showKeyModal(key, duration);
-
-    // bersihkan URL biar gak bisa refresh duplicate
     window.history.replaceState({}, document.title, "/");
 }
 
 function showKeyModal(key, duration) {
     document.getElementById("generatedKey").textContent = key;
-    document.getElementById("keyDuration").textContent =
-        "Duration: " + duration;
-
+    document.getElementById("keyDuration").textContent = "Duration: " + duration;
     document.getElementById("keyModal").classList.add("active");
 }
 
@@ -593,12 +566,8 @@ function closeKeyModal() {
 
 function copyGeneratedKey() {
     const key = document.getElementById("generatedKey").textContent;
-
     if (!key) return;
-
-    navigator.clipboard.writeText(key).then(() => {
-        alert("✓ Key copied!");
-    });
+    navigator.clipboard.writeText(key).then(() => alert("✓ Key copied!"));
 }
 
 function handleUserNavClick() {
@@ -606,7 +575,6 @@ function handleUserNavClick() {
         openAuthModal();
         return;
     }
-
     openProfileModal();
 }
 
@@ -615,41 +583,30 @@ function closeProfileModal() {
 }
 
 document.addEventListener("click", function (e) {
-  const profileModal = document.getElementById("profileModal");
-
-  if (!profileModal) return;
-
-  if (e.target === profileModal) {
-    closeProfileModal();
-  }
+    const profileModal = document.getElementById("profileModal");
+    if (!profileModal) return;
+    if (e.target === profileModal) closeProfileModal();
 });
 
 function openProfileModal() {
     if (!currentUser) return;
 
     let avatarUrl;
-
     if (currentUser.avatar) {
-        avatarUrl =
-            `https://cdn.discordapp.com/avatars/${currentUser.id}/${currentUser.avatar}.png?size=256`;
+        avatarUrl = `https://cdn.discordapp.com/avatars/${currentUser.id}/${currentUser.avatar}.png?size=256`;
     } else {
         const index = parseInt(currentUser.id) % 5;
-        avatarUrl =
-            `https://cdn.discordapp.com/embed/avatars/${index}.png`;
+        avatarUrl = `https://cdn.discordapp.com/embed/avatars/${index}.png`;
     }
 
     document.getElementById("profileAvatar").src = avatarUrl;
-    document.getElementById("profileUsername").textContent =
-        currentUser.username;
-    document.getElementById("profileId").textContent =
-        `Discord ID: ${currentUser.id}`;
-
+    document.getElementById("profileUsername").textContent = currentUser.username;
+    document.getElementById("profileId").textContent = `Discord ID: ${currentUser.id}`;
     document.getElementById("profileModal").classList.add("active");
-    document.getElementById("profileStatus").textContent =
-        "Status: " + (currentUser.status || "Free");
+    document.getElementById("profileStatus").textContent = "Status: " + (currentUser.status || "Free");
 }
 
-// ===== WORK.INK FUNCTIONS =====
+// ===== WORK.INK FUNCTIONS - FIXED =====
 async function handleWorkinkClick() {
     if (!isAuthenticated) {
         openAuthModal();
@@ -657,10 +614,8 @@ async function handleWorkinkClick() {
     }
 
     try {
-        // Tampilkan loading
         const loadingId = showLoading("Directing to Workink...");
 
-        // Panggil endpoint workink
         const response = await fetch("/api?action=workink", {
             credentials: "include"
         });
@@ -669,10 +624,9 @@ async function handleWorkinkClick() {
         hideLoading(loadingId);
 
         if (!response.ok) {
-            throw new Error(data.error || "Failed generate link");
+            throw new Error(data.error || "Failed to generate link");
         }
 
-        // https://work.ink/2jhr/pevolution-{TOKEN}
         window.location.href = data.workink_url;
 
     } catch (error) {
@@ -682,22 +636,13 @@ async function handleWorkinkClick() {
     }
 }
 
-// Loading indicator
+// Loading indicator - FIXED
 let loadingCounter = 0;
-  if (!isAuthenticated) {
-    openAuthModal(); // Minta login dulu
-    return;
-  }
 
 function showLoading(message) {
     loadingCounter++;
     const id = `loading-${loadingCounter}`;
-  try {
-    showLoading("Mengarahkan ke Work.ink...");
-    const res = await fetch("/api?action=workink", { credentials: "include" });
-    const data = await res.json();
-    hideLoading();
-
+    
     const loader = document.createElement("div");
     loader.id = id;
     loader.className = "loading-overlay";
@@ -714,8 +659,6 @@ function hideLoading(id) {
     if (id) {
         const loader = document.getElementById(id);
         if (loader) loader.remove();
-    if (res.ok) {
-      window.location.href = data.workink_url;
     } else {
         document.querySelectorAll('.loading-overlay').forEach(el => el.remove());
     }
@@ -727,11 +670,10 @@ function handlePremiumClick() {
         openAuthModal();
         return;
     }
-    
     window.open("https://discord.gg/BPBvVKK94r", "_blank");
 }
 
-// Function checkWorkinkRedirect
+// Check Workink redirect
 function checkWorkinkRedirect() {
     const params = new URLSearchParams(window.location.search);
     const key = params.get("key");
@@ -760,6 +702,21 @@ function checkWorkinkRedirect() {
             case 'invalid_token':
                 message = 'Invalid token format.';
                 break;
+            case 'invalid_session':
+                message = 'Invalid session. Please try again.';
+                break;
+            case 'already_used':
+                message = 'Session already used.';
+                break;
+            case 'session_expired':
+                message = 'Session expired. Please try again.';
+                break;
+            case 'no_token':
+                message = 'No token found.';
+                break;
+            case 'user_mismatch':
+                message = 'User mismatch. Please login again.';
+                break;
             default:
                 message = 'An error occurred. Please try again.';
         }
@@ -773,12 +730,7 @@ function checkWorkinkRedirect() {
         const expireDate = new Date(parseInt(exp));
         showKeyModal(key, expireDate.toLocaleString());
         window.history.replaceState({}, document.title, '/');
-      alert("Gagal generate link");
     }
-  } catch (error) {
-    hideLoading();
-    alert("Terjadi error");
-  }
 }
 
 // ===== EXPORT =====
