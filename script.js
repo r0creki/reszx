@@ -13,6 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
     updateMemberCount();
     encryptPaths();
     checkGenerateFromRedirect();
+    checkWorkinkRedirect(); // <-- TAMBAHKAN
     
     // Load scripts if on scripts page
     if (document.getElementById('scriptsGrid')) {
@@ -47,7 +48,8 @@ function updateScriptStats() {
 
 async function checkAuth() {
     try {
-        const res = await fetch("/api/me", {
+        // UBAH: /api/me → /api?action=me
+        const res = await fetch("/api?action=me", {
             credentials: "include"
         });
 
@@ -301,7 +303,7 @@ function toggleFaq(index) {
 }
 
 // ===== KEY FUNCTIONS =====
-function redeemKey() {
+async function redeemKey() {
     if (!isAuthenticated) {
         openAuthModal();
         return;
@@ -311,15 +313,43 @@ function redeemKey() {
     if (!input) return;
     
     const key = input.value.trim();
-    if (key) {
-        if (key.startsWith('PEVO-') && key.split('-').length === 4) {
+    if (!key) {
+        alert('Please enter a key');
+        return;
+    }
+    
+    if (!key.startsWith('PEVO-') || key.split('-').length !== 4) {
+        alert('Invalid key format. Use: PEVO-XXXX-XXXX-XXXX');
+        return;
+    }
+    
+    try {
+        showLoading("Redeeming key...");
+        
+        // UBAH: /api/redeem → /api?action=redeem
+        const response = await fetch("/api?action=redeem", {
+            method: "POST",
+            credentials: "include",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ key })
+        });
+        
+        const data = await response.json();
+        hideLoading();
+        
+        if (response.ok && data.success) {
             alert('✓ Key redeemed successfully!');
             input.value = '';
         } else {
-            alert('Invalid key format. Use: PEVO-XXXX-XXXX-XXXX');
+            alert(data.error || 'Failed to redeem key');
         }
-    } else {
-        alert('Please enter a key');
+        
+    } catch (error) {
+        hideLoading();
+        console.error("Redeem error:", error);
+        alert('Error redeeming key');
     }
 }
 
@@ -485,16 +515,6 @@ function showAccessDenied() {
     }, 1000);
 }
 
-function handleWorkinkClick() {
-    if (!isAuthenticated) {
-        openAuthModal();
-        return;
-    }
-
-    window.location.href =
-        "https://work.ink/2jhr/key-system-pev";
-}
-
 // ===== ENCRYPTION =====
 function encryptPaths() {
     document.querySelectorAll('.encrypted-url').forEach(el => {
@@ -518,7 +538,8 @@ async function updateMemberCount() {
 }
 
 function authorizeDiscord() {
-    window.location.href = "/api/login";
+    // UBAH: /api/login → /api?action=login
+    window.location.href = "/api?action=login";
 }
 
 async function checkGenerateFromRedirect() {
@@ -537,7 +558,6 @@ async function checkGenerateFromRedirect() {
     // bersihkan URL biar gak bisa refresh duplicate
     window.history.replaceState({}, document.title, "/");
 }
-
 
 function showKeyModal(key, duration) {
     document.getElementById("generatedKey").textContent = key;
@@ -584,7 +604,6 @@ document.addEventListener("click", function (e) {
   }
 });
 
-
 function openProfileModal() {
     if (!currentUser) return;
 
@@ -607,7 +626,124 @@ function openProfileModal() {
 
     document.getElementById("profileModal").classList.add("active");
     document.getElementById("profileStatus").textContent =
-  "Status: " + currentUser.status;
+        "Status: " + (currentUser.status || "Free");
+}
+
+// ===== WORK.INK FUNCTIONS =====
+async function handleWorkinkClick() {
+    if (!isAuthenticated) {
+        openAuthModal();
+        return;
+    }
+
+    try {
+        // Tampilkan loading
+        const loadingId = showLoading("Generating Work.ink link...");
+
+        // UBAH: /api/workink → /api?action=workink
+        const response = await fetch("/api?action=workink", {
+            credentials: "include"
+        });
+
+        const data = await response.json();
+
+        hideLoading(loadingId);
+
+        if (!response.ok) {
+            throw new Error(data.error || "Failed to generate link");
+        }
+
+        // Redirect ke Work.ink
+        window.location.href = data.workink_url;
+
+    } catch (error) {
+        console.error("Workink error:", error);
+        alert("Failed to generate Work.ink link. Please try again.");
+        hideLoading();
+    }
+}
+
+// Loading indicator
+let loadingCounter = 0;
+
+function showLoading(message) {
+    loadingCounter++;
+    const id = `loading-${loadingCounter}`;
+    
+    const loader = document.createElement("div");
+    loader.id = id;
+    loader.className = "loading-overlay";
+    loader.innerHTML = `
+        <div class="loading-spinner"></div>
+        <p>${message}</p>
+    `;
+    document.body.appendChild(loader);
+    
+    return id;
+}
+
+function hideLoading(id) {
+    if (id) {
+        const loader = document.getElementById(id);
+        if (loader) loader.remove();
+    } else {
+        document.querySelectorAll('.loading-overlay').forEach(el => el.remove());
+    }
+}
+
+// Premium click handler
+function handlePremiumClick() {
+    if (!isAuthenticated) {
+        openAuthModal();
+        return;
+    }
+    
+    window.open("https://discord.gg/BPBvVKK94r", "_blank");
+}
+
+// Fungsi checkWorkinkRedirect
+function checkWorkinkRedirect() {
+    const params = new URLSearchParams(window.location.search);
+    const key = params.get("key");
+    const exp = params.get("exp");
+    const error = params.get("error");
+
+    if (error) {
+        let message = "";
+        switch(error) {
+            case 'login_required':
+                message = 'Please log in first to get the key.';
+                openAuthModal();
+                break;
+            case 'token_used':
+                message = 'This link has already been used. Generate a new link.';
+                break;
+            case 'server_error':
+                message = 'Server error. Please try again later.';
+                break;
+            case 'no_token':
+                message = 'Token is invalid.';
+                break;
+            case 'ip_banned':
+                message = 'Your IP is blacklisted. Contact admin.';
+                break;
+            case 'invalid_token':
+                message = 'Invalid token format.';
+                break;
+            default:
+                message = 'An error occurred. Please try again.';
+        }
+        
+        if (message) alert(message);
+        window.history.replaceState({}, document.title, '/');
+        return;
+    }
+
+    if (key && exp) {
+        const expireDate = new Date(parseInt(exp));
+        showKeyModal(key, expireDate.toLocaleString());
+        window.history.replaceState({}, document.title, '/');
+    }
 }
 
 // ===== EXPORT =====
@@ -625,3 +761,5 @@ window.copyScript = copyScript;
 window.closeKeyModal = closeKeyModal;
 window.copyGeneratedKey = copyGeneratedKey;
 window.closeProfileModal = closeProfileModal;
+window.handleWorkinkClick = handleWorkinkClick;
+window.handlePremiumClick = handlePremiumClick;
