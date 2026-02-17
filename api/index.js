@@ -20,7 +20,7 @@ function hashIp(ip) {
 
 // ==================== MAIN HANDLER ====================
 export default async function handler(req, res) {
-  const { action } = req.query; // ?action=login, ?action=me, ?action=free-key, dll
+  const { action } = req.query; // ?action=login, ?action=me, ?action=free-key, ?action=workink-callback, dll
 
   // ========== LOGIN (Discord OAuth) ==========
   if (action === "login") {
@@ -127,6 +127,7 @@ export default async function handler(req, res) {
     }
   }
 
+  // ========== WORKINK (Generate Workink URL) ==========
   if (action === "workink") {
     const token = req.cookies.token;
     if (!token) {
@@ -139,7 +140,9 @@ export default async function handler(req, res) {
         return res.status(401).json({ error: "Invalid token" });
       }
 
-      const workinkUrl = `https://work.ink/2jhr/pevolution-{TOKEN}`;
+      // URL Workink dengan format: https://work.ink/2jhr/pevolution-key
+      // TANPA {TOKEN} - Workink akan generate token sendiri
+      const workinkUrl = `https://work.ink/2jhr/pevolution-key`;
 
       res.json({
         success: true,
@@ -152,44 +155,87 @@ export default async function handler(req, res) {
     }
   }
 
-  // ========== FREE-KEY (Workink callback) ==========
+  // ========== FREE-KEY (VALIDATION ENDPOINT) ==========
+  // Endpoint ini dipanggil oleh Work.ink untuk VALIDASI token
+  // URL: /api?action=free-key&token=ABC123 (token dari Work.ink)
   if (action === "free-key") {
     const { token } = req.query;
 
-    console.log("========== WORKINK CALLBACK ==========");
-  console.log("Raw token from URL:", token);
-  console.log("All query params:", req.query);
-  console.log("======================================");
+    console.log("========== WORKINK VALIDATION ENDPOINT ==========");
+    console.log("Token received for validation:", token);
+    console.log("================================================");
 
     if (!token) {
-      return res.redirect("/?error=no_token");
-    }
-
-    // Validation to pevolution- format
-    if (!token.startsWith("pevolution-")) {
-      console.log("Token format invalid. Expected 'pevolution-*' but got:", token);
-      return res.redirect("/?error=invalid_token");
+      return res.status(400).json({ valid: false, error: "Token required" });
     }
 
     try {
+      // Catat token yang divalidasi (opsional)
       const ip = req.headers['x-forwarded-for']?.split(',')[0] || 
                  req.socket.remoteAddress || 
                  'Unknown';
 
-      const ipHash = hashIp(ip);
-      const userAgent = req.headers['user-agent'] || 'Unknown';
+      // Simpan log validasi
+      await supabase.from("verification_logs").insert({
+        key_text: "WORKINK_VALIDATION",
+        ip_address: ip,
+        success: true,
+        error_reason: `Token validated: ${token}`,
+        timestamp: Date.now()
+      }).catch(() => {});
 
+      // Return success ke Work.ink
+      return res.json({ 
+        valid: true,
+        info: {
+          token: token,
+          validated_at: Date.now()
+        }
+      });
+
+    } catch (error) {
+      console.error("Validation error:", error);
+      return res.status(500).json({ valid: false, error: "Server error" });
+    }
+  }
+
+  // ========== WORKINK-CALLBACK (DESTINATION URL) ==========
+  // Endpoint ini adalah DESTINATION URL setelah user selesai di Work.ink
+  // URL: /api?action=workink-callback
+  if (action === "workink-callback") {
+    console.log("========== WORKINK CALLBACK ==========");
+    console.log("User redirected from Work.ink");
+
+    try {
+      // ====================================================
+      // 1. AMBIL USER DARI COOKIE
+      // ====================================================
       const userToken = req.cookies.token;
       if (!userToken) {
+        console.log("No user token found");
         return res.redirect("/?error=login_required");
       }
 
       const user = verifyUser(userToken);
       if (!user) {
+        console.log("Invalid user token");
         return res.redirect("/?error=invalid_session");
       }
 
-      // Cek user
+      console.log("User authenticated:", user.username);
+
+      // ====================================================
+      // 2. DAPATKAN IP USER
+      // ====================================================
+      const ip = req.headers['x-forwarded-for']?.split(',')[0] || 
+                 req.socket.remoteAddress || 
+                 'Unknown';
+      const ipHash = hashIp(ip);
+      const userAgent = req.headers['user-agent'] || 'Unknown';
+
+      // ====================================================
+      // 3. CEK ATAU BUAT USER DI DATABASE
+      // ====================================================
       const { data: existingUser } = await supabase
         .from("users")
         .select("*")
@@ -217,29 +263,9 @@ export default async function handler(req, res) {
           .eq("discord_id", user.id);
       }
 
-      // Check if token already used
-      const { data: existingToken } = await supabase
-        .from("workink_tokens")
-        .select("*")
-        .eq("token", token)
-        .maybeSingle();
-
-      if (existingToken) {
-        return res.redirect("/?error=token_used");
-      }
-
-      // Save token
-      await supabase.from("workink_tokens").insert({
-        token,
-        discord_id: user.id,
-        ip_address: ip,
-        ip_hash: ipHash,
-        used: true,
-        used_at: Date.now(),
-        user_agent: userAgent
-      });
-
-      // Validate key
+      // ====================================================
+      // 4. CEK APAKAH USER SUDAH PUNYA KEY AKTIF
+      // ====================================================
       const { data: existingKey } = await supabase
         .from("keys")
         .select("*")
@@ -249,12 +275,17 @@ export default async function handler(req, res) {
         .maybeSingle();
 
       if (existingKey) {
+        console.log("User already has active key:", existingKey.key);
         return res.redirect(`/?key=${existingKey.key}&exp=${existingKey.expires_at}`);
       }
 
-      // Generate new key (2 hour)
+      // ====================================================
+      // 5. GENERATE KEY BARU (2 JAM)
+      // ====================================================
       const key = generateKey();
       const expiresAt = Date.now() + 2 * 60 * 60 * 1000;
+
+      console.log("Generating new key:", key);
 
       await supabase.from("keys").insert({
         key,
@@ -269,10 +300,38 @@ export default async function handler(req, res) {
         user_agent: userAgent
       });
 
+      // ====================================================
+      // 6. UPDATE TOTAL KEYS USER
+      // ====================================================
+      await supabase
+        .from("users")
+        .update({
+          total_keys: (existingUser?.total_keys || 0) + 1
+        })
+        .eq("discord_id", user.id);
+
+      // ====================================================
+      // 7. LOG SUKSES
+      // ====================================================
+      await supabase.from("verification_logs").insert({
+        key_text: key,
+        discord_id: user.id,
+        ip_address: ip,
+        ip_hash: ipHash,
+        success: true,
+        user_agent: userAgent,
+        timestamp: Date.now()
+      });
+
+      console.log("Key generated successfully, redirecting...");
+      
+      // ====================================================
+      // 8. REDIRECT KE HALAMAN UTAMA DENGAN KEY
+      // ====================================================
       return res.redirect(`/?key=${key}&exp=${expiresAt}`);
 
     } catch (error) {
-      console.error("Free key error:", error);
+      console.error("Workink callback error:", error);
       return res.redirect("/?error=server_error");
     }
   }
@@ -386,6 +445,7 @@ export default async function handler(req, res) {
     }
   }
 
+  // ========== REDEEM (Redeem key) ==========
   if (action === "redeem") {
     if (req.method !== "POST") {
       return res.status(405).json({ error: "Method Not Allowed" });
@@ -446,5 +506,6 @@ export default async function handler(req, res) {
     }
   }
 
+  // Jika action tidak dikenal
   return res.status(400).json({ error: "Invalid action" });
 }
