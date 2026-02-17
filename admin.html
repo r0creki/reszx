@@ -1,86 +1,845 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Admin Panel</title>
+    <title>Pevolution Admin Panel</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        /* Admin panel specific styles */
+        .admin-container {
+            max-width: 1400px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+            position: relative;
+            z-index: 10;
+        }
+
+        .admin-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .admin-header h1 {
+            font-size: 2rem;
+            background: var(--gradient-blue);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .admin-header h1 small {
+            font-size: 1rem;
+            color: var(--text-muted);
+            background: none;
+            -webkit-text-fill-color: var(--text-muted);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border-light);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            border-color: var(--primary);
+            transform: translateY(-2px);
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-label {
+            color: var(--text-muted);
+            font-size: 0.875rem;
+        }
+
+        .toolbar {
+            display: flex;
+            gap: 0.75rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 0.75rem 1.25rem;
+            border: 1px solid var(--border-light);
+            background: rgba(255, 255, 255, 0.03);
+            color: var(--text-secondary);
+            border-radius: 0.75rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn:hover {
+            background: rgba(59, 130, 246, 0.1);
+            border-color: var(--primary);
+            color: var(--text-primary);
+            transform: translateY(-2px);
+        }
+
+        .btn-danger {
+            border-color: rgba(239, 68, 68, 0.3);
+            color: #ef4444;
+        }
+
+        .btn-danger:hover {
+            background: rgba(239, 68, 68, 0.1);
+            border-color: #ef4444;
+        }
+
+        .btn-success {
+            border-color: rgba(16, 185, 129, 0.3);
+            color: #10b981;
+        }
+
+        .btn-success:hover {
+            background: rgba(16, 185, 129, 0.1);
+            border-color: #10b981;
+        }
+
+        .table-container {
+            background: var(--bg-card);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border-light);
+            border-radius: 1rem;
+            overflow-x: auto;
+            margin-bottom: 2rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 1000px;
+        }
+
+        th {
+            text-align: left;
+            padding: 1rem;
+            background: rgba(0, 0, 0, 0.3);
+            color: var(--primary);
+            font-weight: 600;
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-light);
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+        }
+
+        tr:hover td {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .key-cell {
+            font-family: monospace;
+            color: var(--primary);
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .status-used {
+            background: rgba(16, 185, 129, 0.1);
+            color: #10b981;
+        }
+
+        .status-unused {
+            background: rgba(59, 130, 246, 0.1);
+            color: #3b82f6;
+        }
+
+        .status-expired {
+            background: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+        }
+
+        .status-banned {
+            background: rgba(0, 0, 0, 0.3);
+            color: #a0a0b0;
+        }
+
+        .hwid-cell {
+            font-family: monospace;
+            max-width: 150px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            color: var(--text-muted);
+        }
+
+        .ip-cell {
+            font-family: monospace;
+            color: var(--text-muted);
+            font-size: 0.75rem;
+        }
+
+        .checkbox {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: var(--primary);
+        }
+
+        .selection-bar {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border-light);
+            border-radius: 1rem;
+            margin-top: 1rem;
+        }
+
+        .selection-count {
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .filter-section {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .filter-input {
+            padding: 0.5rem 1rem;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border-light);
+            border-radius: 0.5rem;
+            color: var(--text-primary);
+            min-width: 200px;
+        }
+
+        .filter-input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .filter-select {
+            padding: 0.5rem 1rem;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border-light);
+            border-radius: 0.5rem;
+            color: var(--text-primary);
+            cursor: pointer;
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-top: 2rem;
+        }
+
+        .page-btn {
+            padding: 0.5rem 1rem;
+            border: 1px solid var(--border-light);
+            background: rgba(255, 255, 255, 0.03);
+            color: var(--text-secondary);
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .page-btn.active {
+            background: var(--primary);
+            color: var(--bg-deep);
+            border-color: var(--primary);
+        }
+
+        .page-btn:hover:not(.active) {
+            border-color: var(--primary);
+            color: var(--text-primary);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 4rem;
+            color: var(--text-muted);
+        }
+
+        .empty-state svg {
+            width: 64px;
+            height: 64px;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.7rem;
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-muted);
+        }
+    </style>
 </head>
 <body>
+    <!-- Background Effects -->
+    <div class="background-effects">
+        <div class="gradient-bg"></div>
+        <div class="grid-lines"></div>
+        <div class="radial-dots"></div>
+        <div class="glow-spot"></div>
+    </div>
 
-<h2>License Monitoring</h2>
+    <div class="admin-container">
+        <!-- Header -->
+        <div class="admin-header">
+            <h1>
+                🔐 License Key Management
+                <small>v2.0</small>
+            </h1>
+            <div>
+                <span class="badge" id="lastUpdate">Last update: just now</span>
+            </div>
+        </div>
 
-<button onclick="loadKeys()">Refresh</button>
-<button onclick="purge()">Purge Expired</button>
+        <!-- Stats Cards -->
+        <div class="stats-grid" id="statsGrid">
+            <div class="stat-card">
+                <div class="stat-value" id="totalKeys">0</div>
+                <div class="stat-label">Total Keys</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="activeKeys">0</div>
+                <div class="stat-label">Active Keys</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="usedKeys">0</div>
+                <div class="stat-label">Used Keys</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="expiredKeys">0</div>
+                <div class="stat-label">Expired</div>
+            </div>
+        </div>
 
-<table border="1" id="table"></table>
+        <!-- Toolbar -->
+        <div class="toolbar">
+            <button class="btn" onclick="loadKeys()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                </svg>
+                Refresh
+            </button>
+            
+            <button class="btn btn-success" onclick="showGenerateModal()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 5v14M5 12h14"></path>
+                </svg>
+                Generate Key
+            </button>
+            
+            <button class="btn btn-danger" onclick="purgeExpired()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                </svg>
+                Purge Expired
+            </button>
+        </div>
 
-<script>
+        <!-- Filters -->
+        <div class="filter-section">
+            <input type="text" class="filter-input" id="searchInput" placeholder="Search by key, discord, IP..." onkeyup="filterKeys()">
+            <select class="filter-select" id="statusFilter" onchange="filterKeys()">
+                <option value="all">All Status</option>
+                <option value="unused">Unused</option>
+                <option value="used">Used</option>
+                <option value="expired">Expired</option>
+                <option value="banned">Banned</option>
+            </select>
+            <select class="filter-select" id="labelFilter" onchange="filterKeys()">
+                <option value="all">All Labels</option>
+                <option value="Free">Free</option>
+                <option value="Standard">Standard</option>
+                <option value="Premium">Premium</option>
+            </select>
+        </div>
 
-const ADMIN_KEY = "SUPER_SECRET_ADMIN_KEY";
+        <!-- Table -->
+        <div class="table-container">
+            <table id="keysTable">
+                <thead>
+                    <tr>
+                        <th style="width: 40px;">
+                            <input type="checkbox" id="selectAll" class="checkbox" onclick="toggleAll()">
+                        </th>
+                        <th>Key</th>
+                        <th>Status</th>
+                        <th>Label</th>
+                        <th>Discord</th>
+                        <th>HWID</th>
+                        <th>IP Address</th>
+                        <th>Expires</th>
+                        <th>Created</th>
+                        <th>Attempts</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <tr>
+                        <td colspan="10" class="empty-state">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <path d="M12 6v6l4 2"></path>
+                            </svg>
+                            <h3>Loading keys...</h3>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
 
-function loadKeys() {
-    fetch("/api/admin/keys", {
-        headers: { "x-admin-key": ADMIN_KEY }
-    })
-    .then(res => res.json())
-    .then(data => {
+        <!-- Selection Bar -->
+        <div class="selection-bar" id="selectionBar" style="display: none;">
+            <span class="selection-count" id="selectedCount">0</span> key(s) selected
+            <button class="btn btn-danger" onclick="deleteSelected()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                </svg>
+                Delete Selected
+            </button>
+            <button class="btn btn-success" onclick="extendSelected()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <path d="M12 6v6l4 2"></path>
+                </svg>
+                Extend (24h)
+            </button>
+        </div>
 
-        const table = document.getElementById("table");
-        table.innerHTML = `
-        <tr>
-            <th>Select</th>
-            <th>Key</th>
-            <th>Status</th>
-            <th>Label</th>
-            <th>HWID</th>
-            <th>Expire</th>
-        </tr>`;
+        <!-- Pagination -->
+        <div class="pagination" id="pagination"></div>
+    </div>
 
-        data.forEach(k => {
-            table.innerHTML += `
-            <tr>
-                <td><input type="checkbox" value="${k.key}"></td>
-                <td>${k.key}</td>
-                <td>${k.used ? "Used" : "Unused"}</td>
-                <td>${k.label || "-"}</td>
-                <td>${k.hwid || "-"}</td>
-                <td>${new Date(k.expiresAt).toLocaleString()}</td>
-            </tr>`;
-        });
-    });
-}
+    <!-- Generate Modal -->
+    <div class="modal-overlay" id="generateModal">
+        <div class="modal">
+            <button class="modal-close" onclick="closeGenerateModal()">×</button>
+            <div class="modal-icon">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <path d="M12 8v8M8 12h8"></path>
+                </svg>
+            </div>
+            <h2>Generate New Key</h2>
+            
+            <div style="margin: 1.5rem 0; text-align: left;">
+                <label style="display: block; margin-bottom: 0.5rem; color: var(--text-secondary);">Duration</label>
+                <select id="durationSelect" class="filter-select" style="width: 100%; margin-bottom: 1rem;">
+                    <option value="2h">2 Hours (Free)</option>
+                    <option value="1d">1 Day</option>
+                    <option value="7d">7 Days</option>
+                    <option value="30d">30 Days (Monthly)</option>
+                    <option value="90d">90 Days (3 Months)</option>
+                    <option value="1y">1 Year</option>
+                </select>
+                
+                <label style="display: block; margin-bottom: 0.5rem; color: var(--text-secondary);">Label</label>
+                <input type="text" id="labelInput" class="filter-input" placeholder="Standard, Premium, etc" style="width: 100%; margin-bottom: 1rem;" value="Standard">
+                
+                <label style="display: block; margin-bottom: 0.5rem; color: var(--text-secondary);">Quantity</label>
+                <input type="number" id="quantityInput" class="filter-input" value="1" min="1" max="10" style="width: 100%;">
+            </div>
+            
+            <button class="modal-btn" onclick="generateKeys()">Generate</button>
+        </div>
+    </div>
 
-function deleteSelected() {
+    <script>
+        const ADMIN_KEY = "SUPER_SECRET_ADMIN_KEY"; // Ganti dengan yang di .env
+        let allKeys = [];
+        let filteredKeys = [];
+        let currentPage = 1;
+        const itemsPerPage = 50;
 
-    const selected = [...document.querySelectorAll("input[type=checkbox]:checked")]
-        .map(cb => cb.value);
+        // ==================== LOAD KEYS ====================
+        async function loadKeys() {
+            const tbody = document.getElementById("tableBody");
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="10" class="empty-state">
+                        <div class="loader" style="margin: 0 auto;"></div>
+                        <p style="margin-top: 1rem;">Loading keys...</p>
+                    </td>
+                </tr>
+            `;
 
-    selected.forEach(key => {
-        fetch("/api/admin/delete", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "x-admin-key": ADMIN_KEY
-            },
-            body: JSON.stringify({ key })
-        });
-    });
-
-    alert("Deleted selected keys.");
-}
-
-function purge() {
-    fetch("/api/admin/purge", {
-        method: "POST",
-        headers: {
-            "x-admin-key": ADMIN_KEY
+            try {
+                const res = await fetch("/api/admin/keys", {
+                    headers: { "x-admin-key": ADMIN_KEY }
+                });
+                
+                if (!res.ok) throw new Error("Failed to fetch");
+                
+                const data = await res.json();
+                allKeys = data;
+                filteredKeys = [...allKeys];
+                
+                updateStats();
+                renderTable();
+                document.getElementById("lastUpdate").textContent = `Last update: ${new Date().toLocaleTimeString()}`;
+                
+            } catch (error) {
+                console.error("Load error:", error);
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="10" class="empty-state">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" x2="12" y1="8" y2="12"></line>
+                                <circle cx="12" cy="16" r="1"></circle>
+                            </svg>
+                            <h3>Error loading keys</h3>
+                            <p>${error.message}</p>
+                            <button class="btn" onclick="loadKeys()" style="margin-top: 1rem;">Try Again</button>
+                        </td>
+                    </tr>
+                `;
+            }
         }
-    })
-    .then(() => alert("Expired keys deleted."));
-}
 
-</script>
+        // ==================== RENDER TABLE ====================
+        function renderTable() {
+            const tbody = document.getElementById("tableBody");
+            const start = (currentPage - 1) * itemsPerPage;
+            const end = start + itemsPerPage;
+            const pageKeys = filteredKeys.slice(start, end);
+            
+            if (pageKeys.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="10" class="empty-state">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" x2="12" y1="8" y2="12"></line>
+                                <circle cx="12" cy="16" r="1"></circle>
+                            </svg>
+                            <h3>No keys found</h3>
+                            <p>Try adjusting your filters</p>
+                        </td>
+                    </tr>
+                `;
+                renderPagination();
+                return;
+            }
 
-<br>
-<button onclick="deleteSelected()">Delete Selected</button>
+            let html = "";
+            const now = Date.now();
 
+            pageKeys.forEach(k => {
+                const expired = now > k.expiresAt;
+                const status = k.banned ? "banned" : (expired ? "expired" : (k.used ? "used" : "unused"));
+                
+                let statusClass = "status-unused";
+                let statusText = "Unused";
+                
+                if (status === "used") {
+                    statusClass = "status-used";
+                    statusText = "Used";
+                } else if (status === "expired") {
+                    statusClass = "status-expired";
+                    statusText = "Expired";
+                } else if (status === "banned") {
+                    statusClass = "status-banned";
+                    statusText = "Banned";
+                }
+
+                html += `
+                    <tr>
+                        <td>
+                            <input type="checkbox" class="checkbox" value="${k.key}" ${expired || k.banned ? 'disabled' : ''}>
+                        </td>
+                        <td class="key-cell">${k.key}</td>
+                        <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                        <td>${k.label || '-'}</td>
+                        <td>
+                            ${k.discordId ? `
+                                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                    ${k.discordUsername || k.discordId.substring(0, 8)}
+                                </div>
+                            ` : '-'}
+                        </td>
+                        <td class="hwid-cell" title="${k.hwid || ''}">${k.hwid ? k.hwid.substring(0, 16) + '...' : '-'}</td>
+                        <td class="ip-cell">${k.ip_address || '-'}</td>
+                        <td>${new Date(k.expiresAt).toLocaleString()}</td>
+                        <td>${new Date(k.createdAt).toLocaleDateString()}</td>
+                        <td>${k.failedAttempts || 0}</td>
+                    </tr>
+                `;
+            });
+
+            tbody.innerHTML = html;
+            renderPagination();
+            updateSelectionBar();
+        }
+
+        // ==================== PAGINATION ====================
+        function renderPagination() {
+            const totalPages = Math.ceil(filteredKeys.length / itemsPerPage);
+            const pagination = document.getElementById("pagination");
+            
+            if (totalPages <= 1) {
+                pagination.innerHTML = "";
+                return;
+            }
+
+            let html = "";
+            for (let i = 1; i <= totalPages; i++) {
+                html += `<button class="page-btn ${i === currentPage ? 'active' : ''}" onclick="goToPage(${i})">${i}</button>`;
+            }
+            
+            pagination.innerHTML = html;
+        }
+
+        function goToPage(page) {
+            currentPage = page;
+            renderTable();
+        }
+
+        // ==================== FILTERS ====================
+        function filterKeys() {
+            const search = document.getElementById("searchInput").value.toLowerCase();
+            const status = document.getElementById("statusFilter").value;
+            const label = document.getElementById("labelFilter").value;
+            
+            const now = Date.now();
+
+            filteredKeys = allKeys.filter(k => {
+                // Search filter
+                const matchesSearch = search === "" || 
+                    k.key.toLowerCase().includes(search) ||
+                    (k.discordId && k.discordId.toLowerCase().includes(search)) ||
+                    (k.discordUsername && k.discordUsername.toLowerCase().includes(search)) ||
+                    (k.ip_address && k.ip_address.includes(search));
+
+                // Status filter
+                let matchesStatus = true;
+                if (status !== "all") {
+                    const expired = now > k.expiresAt;
+                    if (status === "used") matchesStatus = k.used && !expired && !k.banned;
+                    else if (status === "unused") matchesStatus = !k.used && !expired && !k.banned;
+                    else if (status === "expired") matchesStatus = expired;
+                    else if (status === "banned") matchesStatus = k.banned;
+                }
+
+                // Label filter
+                const matchesLabel = label === "all" || k.label === label;
+
+                return matchesSearch && matchesStatus && matchesLabel;
+            });
+
+            currentPage = 1;
+            renderTable();
+        }
+
+        // ==================== STATS ====================
+        function updateStats() {
+            const now = Date.now();
+            
+            const total = allKeys.length;
+            const active = allKeys.filter(k => !k.used && k.expiresAt > now && !k.banned).length;
+            const used = allKeys.filter(k => k.used && k.expiresAt > now && !k.banned).length;
+            const expired = allKeys.filter(k => k.expiresAt <= now).length;
+            
+            document.getElementById("totalKeys").textContent = total;
+            document.getElementById("activeKeys").textContent = active;
+            document.getElementById("usedKeys").textContent = used;
+            document.getElementById("expiredKeys").textContent = expired;
+        }
+
+        // ==================== SELECTION ====================
+        function toggleAll() {
+            const selectAll = document.getElementById("selectAll");
+            const checkboxes = document.querySelectorAll('input[type=checkbox]:not([disabled])');
+            checkboxes.forEach(cb => cb.checked = selectAll.checked);
+            updateSelectionBar();
+        }
+
+        function updateSelectionBar() {
+            const selected = document.querySelectorAll('input[type=checkbox]:checked').length;
+            const bar = document.getElementById('selectionBar');
+            const count = document.getElementById('selectedCount');
+            
+            if (selected > 0) {
+                count.textContent = selected;
+                bar.style.display = 'flex';
+            } else {
+                bar.style.display = 'none';
+            }
+        }
+
+        // ==================== ACTIONS ====================
+        async function deleteSelected() {
+            const selected = [...document.querySelectorAll("input[type=checkbox]:checked")].map(cb => cb.value);
+            
+            if (selected.length === 0) return;
+            if (!confirm(`Delete ${selected.length} selected keys?`)) return;
+
+            showLoading("Deleting keys...");
+
+            try {
+                for (const key of selected) {
+                    await fetch("/api/admin/delete", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "x-admin-key": ADMIN_KEY
+                        },
+                        body: JSON.stringify({ key })
+                    });
+                }
+
+                alert(`✅ Deleted ${selected.length} keys`);
+                await loadKeys();
+            } catch (error) {
+                alert("❌ Error deleting keys");
+            } finally {
+                hideLoading();
+            }
+        }
+
+        async function extendSelected() {
+            const selected = [...document.querySelectorAll("input[type=checkbox]:checked")].map(cb => cb.value);
+            
+            if (selected.length === 0) return;
+            if (!confirm(`Extend ${selected.length} selected keys by 24 hours?`)) return;
+
+            showLoading("Extending keys...");
+
+            try {
+                for (const key of selected) {
+                    await fetch("/api/admin/extend", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "x-admin-key": ADMIN_KEY
+                        },
+                        body: JSON.stringify({ key, duration: "24h" })
+                    });
+                }
+
+                alert(`✅ Extended ${selected.length} keys`);
+                await loadKeys();
+            } catch (error) {
+                alert("❌ Error extending keys");
+            } finally {
+                hideLoading();
+            }
+        }
+
+        async function purgeExpired() {
+            if (!confirm("Delete all expired keys?")) return;
+
+            showLoading("Purging expired keys...");
+
+            try {
+                await fetch("/api/admin/purge", {
+                    method: "POST",
+                    headers: { "x-admin-key": ADMIN_KEY }
+                });
+
+                alert("✅ Expired keys deleted");
+                await loadKeys();
+            } catch (error) {
+                alert("❌ Error purging keys");
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // ==================== GENERATE ====================
+        function showGenerateModal() {
+            document.getElementById("generateModal").classList.add("active");
+        }
+
+        function closeGenerateModal() {
+            document.getElementById("generateModal").classList.remove("active");
+        }
+
+        async function generateKeys() {
+            const duration = document.getElementById("durationSelect").value;
+            const label = document.getElementById("labelInput").value;
+            const quantity = parseInt(document.getElementById("quantityInput").value);
+
+            closeGenerateModal();
+            showLoading(`Generating ${quantity} key(s)...`);
+
+            try {
+                for (let i = 0; i < quantity; i++) {
+                    await fetch("/api/admin/generate", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "x-admin-key": ADMIN_KEY
+                        },
+                        body: JSON.stringify({ duration, label })
+                    });
+                }
+
+                alert(`✅ Generated ${quantity} key(s)`);
+                await loadKeys();
+            } catch (error) {
+                alert("❌ Error generating keys");
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // ==================== UTILS ====================
+        function showLoading(message) {
+            const loader = document.createElement('div');
+            loader.className = 'loading-overlay';
+            loader.id = 'loadingOverlay';
+            loader.innerHTML = `
+                <div class="loading-spinner"></div>
+                <p>${message}</p>
+            `;
+            document.body.appendChild(loader);
+        }
+
+        function hideLoading() {
+            const loader = document.getElementById('loadingOverlay');
+            if (loader) loader.remove();
+        }
+
+        // ==================== AUTO REFRESH ====================
+        setInterval(loadKeys, 30000);
+
+        // ==================== INIT ====================
+        document.addEventListener('DOMContentLoaded', loadKeys);
+        document.addEventListener('change', updateSelectionBar);
+    </script>
 </body>
 </html>
