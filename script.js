@@ -492,7 +492,7 @@ function handleWorkinkClick() {
     }
 
     window.location.href =
-        "https://work.ink/YOUR_LINK?redirect=https://reszx.vercel.app/?generate=free";
+        "https://work.ink/2jhr/key-system-pev";
 }
 
 // ===== ENCRYPTION =====
@@ -524,23 +524,20 @@ function authorizeDiscord() {
 async function checkGenerateFromRedirect() {
     const params = new URLSearchParams(window.location.search);
 
-    if (params.get("generate") !== "free") return;
-    if (!isAuthenticated) return;
+    const key = params.get("key");
+    const exp = params.get("exp");
 
-    try {
-        const res = await fetch("/api/free-key");
-        const data = await res.json();
+    if (!key || !exp) return;
 
-        if (data.key) {
-            showKeyModal(data.key, "2 Hours");
+    const expireDate = new Date(parseInt(exp));
+    const duration = expireDate.toLocaleString();
 
-            // Bersihkan query biar gak regenerate lagi
-            window.history.replaceState({}, document.title, "/");
-        }
-    } catch (err) {
-        console.error("Failed to generate key");
-    }
+    showKeyModal(key, duration);
+
+    // bersihkan URL biar gak bisa refresh duplicate
+    window.history.replaceState({}, document.title, "/");
 }
+
 
 function showKeyModal(key, duration) {
     document.getElementById("generatedKey").textContent = key;
