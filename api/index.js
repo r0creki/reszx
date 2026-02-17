@@ -158,46 +158,70 @@ export default async function handler(req, res) {
   // ========== FREE-KEY (VALIDATION ENDPOINT) ==========
   // Endpoint ini dipanggil oleh Work.ink untuk VALIDASI token
   // URL: /api?action=free-key&token=ABC123 (token dari Work.ink)
-  if (action === "free-key") {
-    const { token } = req.query;
+ if (action === "free-key") {
+  const { token } = req.query;
 
-    console.log("========== WORKINK VALIDATION ENDPOINT ==========");
-    console.log("Token received for validation:", token);
-    console.log("================================================");
+  console.log("========== WORKINK VALIDATION ENDPOINT ==========");
+  console.log("1. Raw token from URL:", token);
+  console.log("2. All query params:", req.query);
+  console.log("3. Request headers:", {
+    userAgent: req.headers['user-agent'],
+    ip: req.headers['x-forwarded-for'] || req.socket.remoteAddress
+  });
+  console.log("================================================");
 
-    if (!token) {
-      return res.status(400).json({ valid: false, error: "Token required" });
-    }
+  if (!token) {
+    console.log("4. ERROR: No token provided");
+    return res.status(400).json({ valid: false, error: "Token required" });
+  }
 
+  try {
+    console.log("4. Processing token:", token);
+    
+    // Catat token yang divalidasi
+    const ip = req.headers['x-forwarded-for']?.split(',')[0] || 
+               req.socket.remoteAddress || 
+               'Unknown';
+
+    console.log("5. IP Address:", ip);
+
+    // Simpan log validasi
     try {
-      // Catat token yang divalidasi (opsional)
-      const ip = req.headers['x-forwarded-for']?.split(',')[0] || 
-                 req.socket.remoteAddress || 
-                 'Unknown';
-
-      // Simpan log validasi
       await supabase.from("verification_logs").insert({
         key_text: "WORKINK_VALIDATION",
         ip_address: ip,
         success: true,
-        error_reason: `Token validated: ${token}`,
+        error_reason: `Token: ${token}`,
         timestamp: Date.now()
-      }).catch(() => {});
-
-      // Return success ke Work.ink
-      return res.json({ 
-        valid: true,
-        info: {
-          token: token,
-          validated_at: Date.now()
-        }
       });
-
-    } catch (error) {
-      console.error("Validation error:", error);
-      return res.status(500).json({ valid: false, error: "Server error" });
+      console.log("6. Log saved to database");
+    } catch (dbError) {
+      console.error("6. Database error:", dbError.message);
+      // Tetap lanjutkan walau database error
     }
+
+    // Return success ke Work.ink
+    console.log("7. Returning success response");
+    return res.status(200).json({ 
+      valid: true,
+      info: {
+        token: token,
+        validated_at: Date.now()
+      }
+    });
+
+  } catch (error) {
+    console.error("❌ CATCH ERROR:", error);
+    console.error("Error message:", error.message);
+    console.error("Error stack:", error.stack);
+    
+    return res.status(500).json({ 
+      valid: false, 
+      error: "Server error",
+      details: error.message 
+    });
   }
+}
 
   // ========== WORKINK-CALLBACK (DESTINATION URL) ==========
   // Endpoint ini adalah DESTINATION URL setelah user selesai di Work.ink
