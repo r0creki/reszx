@@ -265,105 +265,75 @@ export default async function handler(req, res) {
     }
 
     // ========== WORKINK CALLBACK - Generate Key ==========
-    if (action === "callback") {
-      console.log("=== WORKINK CALLBACK ===");
-      
-      const { uid, discord } = req.query;
-      const userToken = req.cookies.token;
-      
-      console.log("UID:", uid);
-      console.log("Discord param:", discord);
-      console.log("User token exists:", !!userToken);
+if (action === "callback") {
+  console.log("=== WORKINK CALLBACK ===");
+  
+  const { uid, discord } = req.query;
+  const userToken = req.cookies.token;
+  
+  if (!uid || !discord) {
+    return res.redirect("/?error=invalid_params");
+  }
 
-      if (!uid || !discord) {
-        return res.redirect("/?error=invalid_params");
-      }
+  if (!userToken) {
+    return res.redirect("/?error=login_required");
+  }
 
-      if (!userToken) {
-        return res.redirect("/?error=login_required");
-      }
-
-      try {
-        const user = jwt.verify(userToken, process.env.JWT_SECRET);
-        
-        if (user.id !== discord) {
-          console.log("User mismatch", { tokenUser: user.id, discordParam: discord });
-          return res.redirect("/?error=user_mismatch");
-        }
-
-        const { data: valid } = await supabase
-          .from("workink_valid")
-          .select("*")
-          .eq("discord_id", discord)
-          .eq("used", false)
-          .gt("created_at", Date.now() - 600000)
-          .order("created_at", { ascending: false })
-          .limit(1)
-          .maybeSingle();
-
-        if (!valid) {
-          console.log("No valid workink entry found for discord:", discord);
-          return res.redirect("/?error=not_validated");
-        }
-
-        await supabase
-          .from("workink_valid")
-          .update({ used: true, used_at: Date.now() })
-          .eq("id", valid.id);
-
-        const { data: existingKey } = await supabase
-          .from("keys")
-          .select("*")
-          .eq("discord_id", user.id)
-          .gt("expires_at", Date.now())
-          .maybeSingle();
-
-        if (existingKey) {
-          console.log("User already has key:", existingKey.key);
-          return res.redirect(`/?key=${existingKey.key}&exp=${existingKey.expires_at}`);
-        }
-
-        const key = generateKey();
-        const expiresAt = Date.now() + 7200000;
-        const ipInfo = await getIpInfo(clientIp);
-
-        await supabase.from("keys").insert({
-          key: key,
-          discord_id: user.id,
-          expires_at: expiresAt,
-          created_at: Date.now(),
-          used: true,
-          ip_address: clientIp,
-          ip_info: ipInfo,
-          user_agent: req.headers['user-agent']
-        });
-
-        await sendToWebhook("success", {
-          title: "✅ New Key Generated",
-          fields: {
-            "User": `${user.username} (${user.id})`,
-            "Key": `||${key}||`,
-            "Expires": new Date(expiresAt).toLocaleString(),
-            "IP Address": `||${clientIp}||`,
-            "📍 Location": ipInfo ? `${ipInfo.city || 'Unknown'}, ${ipInfo.regionName || 'Unknown'}, ${ipInfo.country || 'Unknown'}` : 'Unknown',
-            "🗺️ Coordinates": ipInfo ? `${ipInfo.lat}, ${ipInfo.lon}` : 'Unknown',
-            "🏢 ISP": ipInfo?.isp || 'Unknown',
-            "🏛️ Organization": ipInfo?.org || 'Unknown',
-            "🆔 ASN": ipInfo?.as || 'Unknown',
-            "🌐 Timezone": ipInfo?.timezone || 'Unknown',
-            "📦 ZIP": ipInfo?.zip || 'Unknown',
-            "💻 User Agent": req.headers['user-agent'] || 'Unknown'
-          }
-        });
-
-        console.log("Key generated successfully, redirecting with key");
-        return res.redirect(`/?key=${key}&exp=${expiresAt}`);
-
-      } catch (error) {
-        console.error("Workink callback error:", error);
-        return res.redirect("/?error=server_error");
-      }
+  try {
+    const user = jwt.verify(userToken, process.env.JWT_SECRET);
+    
+    if (user.id !== discord) {
+      return res.redirect("/?error=user_mismatch");
     }
+
+    // CEK APAKAH SUDAH PUNYA KEY AKTIF
+    const { data: existingKey } = await supabase
+      .from("keys")
+      .select("*")
+      .eq("discord_id", user.id)
+      .gt("expires_at", Date.now())
+      .maybeSingle();
+
+    if (existingKey) {
+      return res.redirect(`/?key=${existingKey.key}&exp=${existingKey.expires_at}`);
+    }
+
+    // GENERATE KEY BARU (2 JAM)
+    const key = generateKey();
+    const expiresAt = Date.now() + 7200000;
+    const ipInfo = await getIpInfo(clientIp);
+
+    await supabase.from("keys").insert({
+      key: key,
+      discord_id: user.id,
+      expires_at: expiresAt,
+      created_at: Date.now(),
+      used: true,
+      ip_address: clientIp,
+      ip_info: ipInfo,
+      user_agent: req.headers['user-agent']
+    });
+
+    // KIRIM KE WEBHOOK
+    await sendToWebhook("success", {
+      title: "✅ New Key Generated",
+      fields: {
+        "User": `${user.username} (${user.id})`,
+        "Key": key,
+        "Expires": new Date(expiresAt).toLocaleString(),
+        "IP Address": clientIp,
+        "📍 Location": ipInfo ? `${ipInfo.city}, ${ipInfo.country}` : 'Unknown',
+        "🏢 ISP": ipInfo?.isp || 'Unknown'
+      }
+    });
+
+    return res.redirect(`/?key=${key}&exp=${expiresAt}`);
+
+  } catch (error) {
+    console.error("Workink callback error:", error);
+    return res.redirect("/?error=server_error");
+  }
+}
 
     // ========== DEBUG ==========
     if (action === "debug-valid") {
