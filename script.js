@@ -627,6 +627,12 @@ async function handleWorkinkClick() {
             throw new Error(data.error || "Failed to generate link");
         }
 
+        // Simpan timestamp
+        localStorage.setItem('workink_start', Date.now().toString());
+        
+        // Inform user about 15 minutes
+        alert("You have 15 minutes to complete the Work.ink captcha. Don't close this tab!");
+        
         window.location.href = data.workink_url;
 
     } catch (error) {
@@ -750,3 +756,4 @@ window.copyGeneratedKey = copyGeneratedKey;
 window.closeProfileModal = closeProfileModal;
 window.handleWorkinkClick = handleWorkinkClick;
 window.handlePremiumClick = handlePremiumClick;
+
