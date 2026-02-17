@@ -3,6 +3,7 @@ let isAuthenticated = false;
 let currentUser = null;
 
 // Initialize
+// Initialize
 document.addEventListener('DOMContentLoaded', () => {
     checkAuth();
     updateScriptStats();
@@ -13,13 +14,35 @@ document.addEventListener('DOMContentLoaded', () => {
     updateMemberCount();
     encryptPaths();
     checkGenerateFromRedirect();
-    checkWorkinkRedirect(); // <-- TAMBAHKAN
+    checkWorkinkRedirect();
+    setupNavbarScroll(); // <-- TAMBAHKAN
     
     // Load scripts if on scripts page
     if (document.getElementById('scriptsGrid')) {
         loadScripts();
     }
 });
+
+// ===== NAVBAR SCROLL EFFECT =====
+function setupNavbarScroll() {
+    const desktopNav = document.getElementById('desktopNav');
+    if (!desktopNav) return;
+    
+    let lastScrollTop = 0;
+    const scrollThreshold = 100; // Scroll 100px baru muncul
+    
+    window.addEventListener('scroll', () => {
+        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+        
+        if (scrollTop > scrollThreshold) {
+            desktopNav.classList.add('visible');
+        } else {
+            desktopNav.classList.remove('visible');
+        }
+        
+        lastScrollTop = scrollTop;
+    });
+}
 
 // ===== AUTHENTICATION =====
 
