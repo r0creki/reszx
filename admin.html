@@ -303,6 +303,128 @@
             background: rgba(255, 255, 255, 0.05);
             color: var(--text-muted);
         }
+
+        /* Generate Modal */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-light);
+            border-radius: 1.5rem;
+            max-width: 400px;
+            width: 100%;
+            padding: 2rem;
+            position: relative;
+            animation: modalIn 0.3s ease;
+            text-align: center;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: color 0.2s ease;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+        }
+
+        .modal-close:hover {
+            color: var(--text-primary);
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .modal-icon {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 1rem;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal h2 {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .modal-btn {
+            width: 100%;
+            padding: 0.75rem;
+            background: var(--gradient-blue);
+            border: none;
+            border-radius: 0.75rem;
+            color: var(--bg-deep);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .modal-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px -10px var(--primary-glow);
+        }
+
+        /* Loading Overlay */
+        .loading-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(10, 10, 15, 0.95);
+            backdrop-filter: blur(10px);
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(59, 130, 246, 0.1);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes modalIn {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
     </style>
 </head>
 <body>
@@ -410,11 +532,8 @@
                 <tbody id="tableBody">
                     <tr>
                         <td colspan="10" class="empty-state">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                                <circle cx="12" cy="12" r="10"></circle>
-                                <path d="M12 6v6l4 2"></path>
-                            </svg>
-                            <h3>Loading keys...</h3>
+                            <div class="loader" style="margin: 0 auto;"></div>
+                            <p style="margin-top: 1rem;">Loading keys...</p>
                         </td>
                     </tr>
                 </tbody>
@@ -497,7 +616,8 @@
             `;
 
             try {
-                const res = await fetch("/api/admin/keys", {
+                // UBAH: /api/admin/keys → /api/admin?action=keys
+                const res = await fetch("/api/admin?action=keys", {
                     headers: { "x-admin-key": ADMIN_KEY }
                 });
                 
@@ -711,7 +831,8 @@
 
             try {
                 for (const key of selected) {
-                    await fetch("/api/admin/delete", {
+                    // UBAH: /api/admin/delete → /api/admin?action=delete
+                    await fetch("/api/admin?action=delete", {
                         method: "POST",
                         headers: {
                             "Content-Type": "application/json",
@@ -740,7 +861,8 @@
 
             try {
                 for (const key of selected) {
-                    await fetch("/api/admin/extend", {
+                    // UBAH: /api/admin/extend → /api/admin?action=extend
+                    await fetch("/api/admin?action=extend", {
                         method: "POST",
                         headers: {
                             "Content-Type": "application/json",
@@ -765,7 +887,8 @@
             showLoading("Purging expired keys...");
 
             try {
-                await fetch("/api/admin/purge", {
+                // UBAH: /api/admin/purge → /api/admin?action=purge
+                await fetch("/api/admin?action=purge", {
                     method: "POST",
                     headers: { "x-admin-key": ADMIN_KEY }
                 });
@@ -797,18 +920,24 @@
             showLoading(`Generating ${quantity} key(s)...`);
 
             try {
-                for (let i = 0; i < quantity; i++) {
-                    await fetch("/api/admin/generate", {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/json",
-                            "x-admin-key": ADMIN_KEY
-                        },
-                        body: JSON.stringify({ duration, label })
-                    });
-                }
+                // UBAH: /api/admin/generate → /api/admin?action=generate
+                const response = await fetch("/api/admin?action=generate", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "x-admin-key": ADMIN_KEY
+                    },
+                    body: JSON.stringify({ duration, label, quantity })
+                });
+                
+                const data = await response.json();
 
-                alert(`✅ Generated ${quantity} key(s)`);
+                if (response.ok && data.success) {
+                    alert(`✅ Generated ${data.count} key(s)`);
+                } else {
+                    alert("❌ Error generating keys");
+                }
+                
                 await loadKeys();
             } catch (error) {
                 alert("❌ Error generating keys");
