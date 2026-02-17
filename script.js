@@ -687,46 +687,30 @@ function handlePremiumClick() {
 }
 
 // Check Workink redirect
+// ===== CHECK WORKINK REDIRECT =====
 function checkWorkinkRedirect() {
     const params = new URLSearchParams(window.location.search);
     const key = params.get("key");
     const exp = params.get("exp");
-    const error = params.get("error");
-
-    if (error) {
-        let message = "";
-        switch(error) {
-            case 'login_required':
-                message = 'Please log in first to get the key.';
-                openAuthModal();
-                break;
-            case 'user_mismatch':
-                message = 'User mismatch. Please login again.';
-                openAuthModal();
-                break;
-            case 'invalid_params':
-                message = 'Invalid parameters. Please try again.';
-                break;
-            case 'not_validated':
-                message = 'Workink validation failed. Please try again.';
-                break;
-            case 'invalid_token':
-                message = 'Invalid session. Please login again.';
-                openAuthModal();
-                break;
-            default:
-                message = 'An error occurred. Please try again.';
-        }
-        
-        if (message) alert(message);
-        window.history.replaceState({}, document.title, '/');
-        return;
-    }
+    
+    console.log("=== CHECK WORKINK REDIRECT ===");
+    console.log("URL Params:", {
+        key: key,
+        exp: exp,
+        all: Object.fromEntries(params.entries())
+    });
 
     if (key && exp) {
+        console.log("KEY FOUND! Showing modal");
         const expireDate = new Date(parseInt(exp));
         showKeyModal(key, expireDate.toLocaleString());
         window.history.replaceState({}, document.title, '/');
+    } else {
+        console.log("NO KEY FOUND in URL");
+        // Hapus parameter dari URL biar bersih
+        if (params.toString()) {
+            window.history.replaceState({}, document.title, '/');
+        }
     }
 }
 
@@ -747,3 +731,4 @@ window.copyGeneratedKey = copyGeneratedKey;
 window.closeProfileModal = closeProfileModal;
 window.handleWorkinkClick = handleWorkinkClick;
 window.handlePremiumClick = handlePremiumClick;
+
