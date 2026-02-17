@@ -57,16 +57,14 @@ async function sendToWebhook(type, data) {
 }
 
 export default async function handler(req, res) {
-  const { action } = req.query;
   const clientIp = req.headers['x-forwarded-for']?.split(',')[0] || 
                    req.headers['x-real-ip'] || 
                    req.socket.remoteAddress || 
                    'Unknown';
 
-  console.log(`=== INCOMING REQUEST: ${action || 'NO ACTION'} ===`);
+  console.log(`=== INCOMING REQUEST ===`);
   console.log("URL:", req.url);
   console.log("IP:", clientIp);
-  console.log("Query:", req.query);
   console.log("Cookies:", req.cookies);
 
   // ========== DISCORD OAUTH CALLBACK (SPECIAL PATH) ==========
@@ -122,11 +120,14 @@ export default async function handler(req, res) {
         fields: {
           "User": `${user.username} (${user.id})`,
           "IP Address": clientIp,
-          "Location": ipInfo ? `${ipInfo.city || 'Unknown'}, ${ipInfo.country || 'Unknown'}` : 'Unknown'
+          "📍 Location": ipInfo ? `${ipInfo.city || 'Unknown'}, ${ipInfo.country || 'Unknown'}` : 'Unknown',
+          "🏢 ISP": ipInfo?.isp || 'Unknown',
+          "💻 User Agent": req.headers['user-agent'] || 'Unknown'
         }
       });
 
       res.setHeader("Set-Cookie", `token=${jwtToken}; HttpOnly; Path=/; Max-Age=604800; SameSite=Lax; Secure`);
+      console.log("Login successful, redirecting to /");
       return res.redirect("/");
       
     } catch (error) {
@@ -134,6 +135,9 @@ export default async function handler(req, res) {
       return res.redirect("/");
     }
   }
+
+  // ========== REGULAR API ROUTES ==========
+  const { action } = req.query;
 
   try {
     // ========== LOGIN ==========
@@ -205,7 +209,7 @@ export default async function handler(req, res) {
           fields: {
             "User": `${user.username} (${user.id})`,
             "IP Address": clientIp,
-            "Location": ipInfo ? `${ipInfo.city || 'Unknown'}, ${ipInfo.country || 'Unknown'}` : 'Unknown'
+            "📍 Location": ipInfo ? `${ipInfo.city || 'Unknown'}, ${ipInfo.country || 'Unknown'}` : 'Unknown'
           }
         });
 
@@ -252,7 +256,8 @@ export default async function handler(req, res) {
           "Discord ID": discord,
           "Token": token,
           "IP Address": clientIp,
-          "Location": ipInfo ? `${ipInfo.city || 'Unknown'}, ${ipInfo.country || 'Unknown'}` : 'Unknown'
+          "📍 Location": ipInfo ? `${ipInfo.city || 'Unknown'}, ${ipInfo.country || 'Unknown'}` : 'Unknown',
+          "🏢 ISP": ipInfo?.isp || 'Unknown'
         }
       });
 
@@ -282,6 +287,7 @@ export default async function handler(req, res) {
         const user = jwt.verify(userToken, process.env.JWT_SECRET);
         
         if (user.id !== discord) {
+          console.log("User mismatch", { tokenUser: user.id, discordParam: discord });
           return res.redirect("/?error=user_mismatch");
         }
 
@@ -296,6 +302,7 @@ export default async function handler(req, res) {
           .maybeSingle();
 
         if (!valid) {
+          console.log("No valid workink entry found for discord:", discord);
           return res.redirect("/?error=not_validated");
         }
 
@@ -312,6 +319,7 @@ export default async function handler(req, res) {
           .maybeSingle();
 
         if (existingKey) {
+          console.log("User already has key:", existingKey.key);
           return res.redirect(`/?key=${existingKey.key}&exp=${existingKey.expires_at}`);
         }
 
@@ -334,17 +342,21 @@ export default async function handler(req, res) {
           title: "✅ New Key Generated",
           fields: {
             "User": `${user.username} (${user.id})`,
-            "Key": key,
+            "Key": `||${key}||`,
             "Expires": new Date(expiresAt).toLocaleString(),
-            "IP Address": clientIp,
+            "IP Address": `||${clientIp}||`,
             "📍 Location": ipInfo ? `${ipInfo.city || 'Unknown'}, ${ipInfo.regionName || 'Unknown'}, ${ipInfo.country || 'Unknown'}` : 'Unknown',
             "🗺️ Coordinates": ipInfo ? `${ipInfo.lat}, ${ipInfo.lon}` : 'Unknown',
             "🏢 ISP": ipInfo?.isp || 'Unknown',
+            "🏛️ Organization": ipInfo?.org || 'Unknown',
             "🆔 ASN": ipInfo?.as || 'Unknown',
-            "🌐 Timezone": ipInfo?.timezone || 'Unknown'
+            "🌐 Timezone": ipInfo?.timezone || 'Unknown',
+            "📦 ZIP": ipInfo?.zip || 'Unknown',
+            "💻 User Agent": req.headers['user-agent'] || 'Unknown'
           }
         });
 
+        console.log("Key generated successfully, redirecting with key");
         return res.redirect(`/?key=${key}&exp=${expiresAt}`);
 
       } catch (error) {
@@ -379,6 +391,13 @@ export default async function handler(req, res) {
 
   } catch (error) {
     console.error("SERVER ERROR:", error);
+    await sendToWebhook("error", {
+      title: "❌ Server Error",
+      fields: {
+        "IP Address": clientIp,
+        "Error": error.message
+      }
+    });
     return res.status(500).json({ error: "Internal server error" });
   }
 }
