@@ -1,69 +1,49 @@
 import { supabase } from "../../lib/supabase.js";
 
-function generateKey() {
-  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-  const part = () => Array.from({ length: 5 }, () =>
-    chars[Math.floor(Math.random() * chars.length)]
-  ).join("");
-  return `PEVO-${part()}-${part()}-${part()}`;
-}
-
-function parseDuration(input) {
-  const num = parseInt(input);
-  if (input.endsWith("mo")) return num * 30 * 24 * 60 * 60 * 1000;
-  if (input.endsWith("y")) return num * 365 * 24 * 60 * 60 * 1000;
-  if (input.endsWith("w")) return num * 7 * 24 * 60 * 60 * 1000;
-  if (input.endsWith("d")) return num * 24 * 60 * 60 * 1000;
-  if (input.endsWith("h")) return num * 60 * 60 * 1000;
-  if (input.endsWith("m")) return num * 60 * 1000;
-  return 0;
-}
-
 export default async function handler(req, res) {
-  // Hanya allow POST
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method Not Allowed" });
-  }
-
   // Admin auth
   if (req.headers["x-admin-key"] !== process.env.ADMIN_KEY) {
     return res.status(403).json({ error: "Forbidden" });
   }
 
   try {
-    const { duration, label } = req.body;
-
-    if (!duration) {
-      return res.status(400).json({ error: "Duration required" });
-    }
-
-    const key = generateKey();
-    const expiresAt = Date.now() + parseDuration(duration);
-
-    const { error } = await supabase.from("keys").insert({
-      key,
-      expires_at: expiresAt,
-      created_at: Date.now(),
-      label: label || "Standard",
-      used: false,
-      failed_attempts: 0
-    });
+    const { data, error } = await supabase
+      .from("keys")
+      .select(`
+        *,
+        users:discord_id (
+          discord_username,
+          discord_avatar
+        )
+      `)
+      .order("created_at", { ascending: false });
 
     if (error) {
-      console.error("Insert error:", error);
+      console.error("Fetch error:", error);
       return res.status(500).json({ error: "Database error" });
     }
 
-    res.json({
-      success: true,
-      key,
-      duration,
-      label: label || "Standard",
-      expires_at: expiresAt
-    });
+    // Transform untuk frontend
+    const transformed = data.map(k => ({
+      key: k.key,
+      discordId: k.discord_id,
+      discordUsername: k.users?.discord_username,
+      hwid: k.hwid ? k.hwid.substring(0, 16) + '...' : null,
+      expiresAt: k.expires_at,
+      failedAttempts: k.failed_attempts,
+      label: k.label,
+      createdAt: k.created_at,
+      used: k.used,
+      banned: k.banned,
+      ip_address: k.ip_address,
+      last_used: k.last_used_at,
+      user_agent: k.user_agent
+    }));
+
+    res.json(transformed);
 
   } catch (err) {
-    console.error("Generate error:", err);
+    console.error("Keys error:", err);
     res.status(500).json({ error: "Internal Server Error" });
   }
 }
