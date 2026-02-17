@@ -552,9 +552,13 @@ function closeKeyModal() {
 }
 
 function copyGeneratedKey() {
-    const key = document.getElementById("keyValue").textContent;
-    navigator.clipboard.writeText(key);
-    alert("✓ Key copied!");
+    const key = document.getElementById("generatedKey").textContent;
+
+    if (!key) return;
+
+    navigator.clipboard.writeText(key).then(() => {
+        alert("✓ Key copied!");
+    });
 }
 
 function handleUserNavClick() {
@@ -602,3 +606,4 @@ window.handlePlanClick = handlePlanClick;
 window.filterScripts = filterScripts;
 window.copyScript = copyScript;
 window.closeKeyModal = closeKeyModal;
+window.copyGeneratedKey = copyGeneratedKey;
