@@ -17,24 +17,48 @@ function hashIp(ip) {
   return crypto.createHash('sha256').update(ip).digest('hex');
 }
 
+function generateCsrfToken() {
+  return crypto.randomBytes(32).toString('hex');
+}
+
 export default async function handler(req, res) {
   const { action } = req.query;
 
   try {
     // Login
     if (action === "login") {
+      const state = generateCsrfToken();
       const params = new URLSearchParams({
         client_id: process.env.CLIENT_ID,
         redirect_uri: process.env.REDIRECT_URI,
         response_type: "code",
-        scope: "identify"
+        scope: "identify",
+        state: state
       });
+      
+      await supabase.from("csrf_tokens").insert({
+        token: state,
+        created_at: Date.now(),
+        used: false
+      });
+      
       return res.redirect(`https://discord.com/oauth2/authorize?${params}`);
     }
 
     // Callback
     if (action === "callback") {
-      const { code } = req.query;
+      const { code, state } = req.query;
+      
+      const { data: csrf } = await supabase
+        .from("csrf_tokens")
+        .select("*")
+        .eq("token", state)
+        .maybeSingle();
+        
+      if (!csrf) return res.redirect("/?error=invalid_state");
+      
+      await supabase.from("csrf_tokens").delete().eq("token", state);
+
       try {
         const tokenResponse = await axios.post(
           "https://discord.com/api/oauth2/token",
@@ -54,7 +78,7 @@ export default async function handler(req, res) {
         );
 
         const jwtToken = signUser(userResponse.data);
-        res.setHeader("Set-Cookie", `token=${jwtToken}; HttpOnly; Path=/; Max-Age=604800; SameSite=Lax${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`);
+        res.setHeader("Set-Cookie", `token=${jwtToken}; HttpOnly; Path=/; Max-Age=604800; SameSite=Lax; Secure`);
         return res.redirect("/");
       } catch (error) {
         return res.redirect("/");
@@ -105,63 +129,7 @@ export default async function handler(req, res) {
       });
     }
 
-    // Create Work.ink Link using API Key
-    if (action === "create-workink-link") {
-      const token = req.cookies.token;
-      if (!token) return res.status(401).json({ error: "Unauthorized" });
-
-      const user = verifyUser(token);
-      if (!user) return res.status(401).json({ error: "Invalid token" });
-
-      if (!process.env.WORKINK_API_KEY) {
-        return res.status(500).json({ error: "Work.ink API key not configured" });
-      }
-
-      try {
-        const response = await fetch("https://dashboard.work.ink/api/v1/link", {
-          method: "POST",
-          headers: {
-            "X-Api-Key": process.env.WORKINK_API_KEY,
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            title: `Pevolution Key - ${user.username}`,
-            destination: "https://reszx.vercel.app/api?action=workink-callback",
-            link_description: "Get your free Pevolution key"
-          })
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-          return res.status(500).json({ error: data.message || "Failed to create link" });
-        }
-
-        const sessionId = crypto.randomBytes(16).toString('hex');
-        const ip = req.headers['x-forwarded-for']?.split(',')[0] || req.socket.remoteAddress || 'Unknown';
-
-        await supabase.from("workink_links").insert({
-          session_id: sessionId,
-          discord_id: user.id,
-          workink_url: data.url,
-          ip_address: ip,
-          created_at: Date.now(),
-          used: false
-        });
-
-        res.setHeader("Set-Cookie", `workink_session=${sessionId}; HttpOnly; Path=/; Max-Age=300; SameSite=Lax${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`);
-
-        return res.json({
-          success: true,
-          workink_url: data.url
-        });
-
-      } catch (error) {
-        return res.status(500).json({ error: "Failed to create Work.ink link" });
-      }
-    }
-
-    // Workink - Generate Session (for fixed link)
+    // Workink - Generate Session dengan Signature
     if (action === "workink") {
       const token = req.cookies.token;
       if (!token) return res.status(401).json({ error: "Unauthorized" });
@@ -169,22 +137,46 @@ export default async function handler(req, res) {
       const user = verifyUser(token);
       if (!user) return res.status(401).json({ error: "Invalid token" });
 
-      const sessionId = crypto.randomBytes(16).toString('hex');
-      const ip = req.headers['x-forwarded-for']?.split(',')[0] || req.socket.remoteAddress || 'Unknown';
+      // Cek apakah user sudah punya session aktif
+      const { data: existingSession } = await supabase
+        .from("workink_sessions")
+        .select("*")
+        .eq("discord_id", user.id)
+        .eq("used", false)
+        .gt("created_at", Date.now() - 300000)
+        .maybeSingle();
 
-      const { error: insertError } = await supabase.from("workink_sessions").insert({
+      if (existingSession) {
+        return res.status(429).json({ error: "Please wait before generating another link" });
+      }
+
+      const sessionId = crypto.randomBytes(32).toString('hex');
+      const signature = crypto.createHmac('sha256', process.env.SECRET_SIGNATURE).update(sessionId).digest('hex');
+      const ip = req.headers['x-forwarded-for']?.split(',')[0] || req.socket.remoteAddress || 'Unknown';
+      const userAgent = req.headers['user-agent'] || 'Unknown';
+      const fingerprint = hashIp(ip + userAgent);
+
+      await supabase.from("workink_sessions").insert({
         session_id: sessionId,
+        signature: signature,
         discord_id: user.id,
         ip_address: ip,
+        user_agent: userAgent,
+        fingerprint: fingerprint,
         created_at: Date.now(),
         used: false
       });
 
-      if (insertError) {
-        return res.status(500).json({ error: "Database error" });
-      }
+      const encryptedSession = Buffer.from(JSON.stringify({
+        id: sessionId,
+        sig: signature.substring(0, 16),
+        exp: Date.now() + 300000
+      })).toString('base64');
 
-      res.setHeader("Set-Cookie", `workink_session=${sessionId}; HttpOnly; Path=/; Max-Age=300; SameSite=Lax${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`);
+      res.setHeader("Set-Cookie", [
+        `workink_session=${encryptedSession}; HttpOnly; Path=/; Max-Age=300; SameSite=Lax; Secure`,
+        `workink_fp=${fingerprint}; HttpOnly; Path=/; Max-Age=300; SameSite=Lax; Secure`
+      ]);
 
       return res.json({
         success: true,
@@ -192,76 +184,129 @@ export default async function handler(req, res) {
       });
     }
 
-    // Free-key - Validation Endpoint
+    // Free-key - Validation Endpoint dengan Verifikasi Ganda
     if (action === "free-key") {
       const { token } = req.query;
       if (!token) return res.status(400).json({ valid: false });
 
       const ip = req.headers['x-forwarded-for']?.split(',')[0] || req.socket.remoteAddress || 'Unknown';
+      const userAgent = req.headers['user-agent'] || 'Unknown';
+      
+      // Validasi format token Work.ink (UUID)
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (!uuidRegex.test(token)) {
+        return res.status(400).json({ valid: false });
+      }
 
-      const { error: insertError } = await supabase.from("pending_tokens").insert({
+      // Cek apakah token sudah pernah dipakai
+      const { data: existingToken } = await supabase
+        .from("pending_tokens")
+        .select("*")
+        .eq("token", token)
+        .maybeSingle();
+
+      if (existingToken) {
+        return res.status(400).json({ valid: false });
+      }
+
+      // Simpan token dengan fingerprint
+      const fingerprint = hashIp(ip + userAgent);
+      await supabase.from("pending_tokens").insert({
         token: token,
         workink_ip: ip,
+        user_agent: userAgent,
+        fingerprint: fingerprint,
         created_at: Date.now(),
-        used: false
+        used: false,
+        expires_at: Date.now() + 300000
       });
-
-      if (insertError) {
-        return res.status(500).json({ valid: false });
-      }
 
       return res.json({ valid: true });
     }
 
-    // Workink Callback - Destination URL
+    // Workink Callback - Destination URL dengan 5 Layer Security
     if (action === "workink-callback") {
-  console.log("=== WORKINK CALLBACK ===");
-  console.log("Cookies:", req.cookies);
-  console.log("Session ID from cookie:", req.cookies.workink_session);
-  
-  const sessionId = req.cookies.workink_session;
-  const userToken = req.cookies.token;
-  const userIp = req.headers['x-forwarded-for']?.split(',')[0] || req.socket.remoteAddress || 'Unknown';
+      const encryptedSession = req.cookies.workink_session;
+      const fingerprint = req.cookies.workink_fp;
+      const userToken = req.cookies.token;
+      const userIp = req.headers['x-forwarded-for']?.split(',')[0] || req.socket.remoteAddress || 'Unknown';
+      const userAgent = req.headers['user-agent'] || 'Unknown';
+      const referer = req.headers.referer || '';
 
-  console.log("User IP:", userIp);
-  console.log("Has userToken:", !!userToken);
+      // LAYER 1: Validasi referer
+      if (!referer.includes('work.ink')) {
+        return res.redirect("/?error=invalid_source");
+      }
 
-  if (!sessionId) {
-    console.log("ERROR: No session cookie");
-    return res.redirect("/?error=invalid_session");
-  }
+      // LAYER 2: Validasi session cookie
+      if (!encryptedSession || !fingerprint) {
+        return res.redirect("/?error=invalid_session");
+      }
+
+      // LAYER 3: Decrypt dan validasi session
+      let sessionData;
+      try {
+        sessionData = JSON.parse(Buffer.from(encryptedSession, 'base64').toString());
+      } catch {
+        return res.redirect("/?error=invalid_session");
+      }
 
       const { data: session, error: sessionError } = await supabase
         .from("workink_sessions")
         .select("*")
-        .eq("session_id", sessionId)
+        .eq("session_id", sessionData.id)
         .maybeSingle();
 
       if (sessionError || !session) return res.redirect("/?error=invalid_session");
+      
+      // LAYER 4: Validasi signature
+      const expectedSignature = crypto.createHmac('sha256', process.env.SECRET_SIGNATURE).update(sessionData.id).digest('hex');
+      if (session.signature !== expectedSignature) {
+        return res.redirect("/?error=invalid_signature");
+      }
+
+      // LAYER 5: Validasi fingerprint
+      const currentFingerprint = hashIp(userIp + userAgent);
+      if (session.fingerprint !== currentFingerprint || fingerprint !== currentFingerprint) {
+        return res.redirect("/?error=fingerprint_mismatch");
+      }
+
       if (session.used) return res.redirect("/?error=already_used");
       if (Date.now() - session.created_at > 300000) return res.redirect("/?error=session_expired");
 
+      // Cari token pending yang valid
       const { data: pendingToken, error: tokenError } = await supabase
         .from("pending_tokens")
         .select("*")
         .eq("used", false)
+        .gt("expires_at", Date.now())
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();
 
       if (tokenError || !pendingToken) return res.redirect("/?error=no_token");
 
+      // Verifikasi fingerprint token
+      if (pendingToken.fingerprint !== currentFingerprint) {
+        return res.redirect("/?error=token_fingerprint_mismatch");
+      }
+
+      // Mark semua sebagai used
       await supabase
         .from("pending_tokens")
-        .update({ used: true, used_at: Date.now() })
+        .update({ used: true, used_at: Date.now(), used_by_ip: userIp })
         .eq("token", pendingToken.token);
 
       await supabase
         .from("workink_sessions")
         .update({ used: true, used_at: Date.now(), workink_token: pendingToken.token })
-        .eq("session_id", sessionId);
+        .eq("session_id", sessionData.id);
 
-      res.setHeader("Set-Cookie", `workink_session=; HttpOnly; Path=/; Max-Age=0; SameSite=Lax`);
+      // Bersihkan cookie
+      res.setHeader("Set-Cookie", [
+        `workink_session=; HttpOnly; Path=/; Max-Age=0; SameSite=Lax; Secure`,
+        `workink_fp=; HttpOnly; Path=/; Max-Age=0; SameSite=Lax; Secure`
+      ]);
 
       if (!userToken) return res.redirect("/?error=login_required");
 
@@ -284,7 +329,6 @@ export default async function handler(req, res) {
       const key = generateKey();
       const expiresAt = Date.now() + 7200000;
       const ipHash = hashIp(userIp);
-      const userAgent = req.headers['user-agent'] || 'Unknown';
 
       const { error: insertKeyError } = await supabase.from("keys").insert({
         key,
@@ -297,7 +341,8 @@ export default async function handler(req, res) {
         ip_hash: ipHash,
         last_used_at: Date.now(),
         user_agent: userAgent,
-        workink_token: pendingToken.token
+        workink_token: pendingToken.token,
+        fingerprint: currentFingerprint
       });
 
       if (insertKeyError) {
