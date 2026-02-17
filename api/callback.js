@@ -1,12 +1,18 @@
 import axios from "axios";
 import jwt from "jsonwebtoken";
 import qs from "querystring";
+import { signUser } from "../lib/auth.js";
 
 export default async function handler(req, res) {
   const code = req.query.code;
 
+  if (!code) {
+    return res.redirect("/");
+  }
+
   try {
-    const token = await axios.post(
+    // Token exchange
+    const tokenResponse = await axios.post(
       "https://discord.com/api/oauth2/token",
       qs.stringify({
         client_id: process.env.CLIENT_ID,
@@ -15,26 +21,37 @@ export default async function handler(req, res) {
         code,
         redirect_uri: process.env.REDIRECT_URI
       }),
-      { headers: { "Content-Type": "application/x-www-form-urlencoded" } }
+      { 
+        headers: { 
+          "Content-Type": "application/x-www-form-urlencoded" 
+        } 
+      }
     );
 
-    const user = await axios.get(
+    // Get user info
+    const userResponse = await axios.get(
       "https://discord.com/api/users/@me",
-      { headers: { Authorization: `Bearer ${token.data.access_token}` } }
+      { 
+        headers: { 
+          Authorization: `Bearer ${tokenResponse.data.access_token}` 
+        } 
+      }
     );
 
-    const jwtToken = jwt.sign(user.data, process.env.JWT_SECRET, {
-      expiresIn: "7d"
-    });
+    // Sign JWT
+    const jwtToken = signUser(userResponse.data);
 
+    // Set cookie
     res.setHeader(
       "Set-Cookie",
-      `token=${jwtToken}; HttpOnly; Path=/; Max-Age=604800`
+      `token=${jwtToken}; HttpOnly; Path=/; Max-Age=604800; SameSite=Lax${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`
     );
 
+    // Redirect to home
     res.redirect("/");
+
   } catch (err) {
-    console.error("OAuth Error:", err);
+    console.error("OAuth Error:", err.response?.data || err.message);
     res.redirect("/");
   }
 }
