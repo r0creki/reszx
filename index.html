@@ -398,21 +398,19 @@
 
 
     <div class="modal-overlay" id="profileModal">
-    <div class="modal">
-        <button class="modal-close" onclick="closeProfileModal()">×</button>
+  <div class="modal profile-card-ui">
+    <button class="modal-close" onclick="closeProfileModal()">×</button>
 
-        <div style="display:flex;flex-direction:column;align-items:center;gap:1rem;">
-            <img id="profileAvatar"
-                 src=""
-                 style="width:80px;height:80px;border-radius:50%;border:2px solid #3b82f6;" />
+    <img id="profileAvatar" class="profile-avatar-big"/>
 
-            <h2 id="profileUsername">Username</h2>
-            <p id="profileId" style="color:#aaa;font-size:0.85rem;"></p>
+    <h2 id="profileUsername"></h2>
 
-        </div>
-    </div>
+    <p id="profileId"></p>
+
+    <div id="profileStatus" class="status-badge"></div>
+
+  </div>
 </div>
-
 
     <script src="script.js"></script>
 </body>
