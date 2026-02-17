@@ -215,11 +215,21 @@ export default async function handler(req, res) {
 
     // Workink Callback - Destination URL
     if (action === "workink-callback") {
-      const sessionId = req.cookies.workink_session;
-      const userToken = req.cookies.token;
-      const userIp = req.headers['x-forwarded-for']?.split(',')[0] || req.socket.remoteAddress || 'Unknown';
+  console.log("=== WORKINK CALLBACK ===");
+  console.log("Cookies:", req.cookies);
+  console.log("Session ID from cookie:", req.cookies.workink_session);
+  
+  const sessionId = req.cookies.workink_session;
+  const userToken = req.cookies.token;
+  const userIp = req.headers['x-forwarded-for']?.split(',')[0] || req.socket.remoteAddress || 'Unknown';
 
-      if (!sessionId) return res.redirect("/?error=invalid_session");
+  console.log("User IP:", userIp);
+  console.log("Has userToken:", !!userToken);
+
+  if (!sessionId) {
+    console.log("ERROR: No session cookie");
+    return res.redirect("/?error=invalid_session");
+  }
 
       const { data: session, error: sessionError } = await supabase
         .from("workink_sessions")
