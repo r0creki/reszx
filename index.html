@@ -16,67 +16,67 @@
         <div class="glow-spot"></div>
     </div>
 
-    <!-- Navigation - Desktop (Muncul saat scroll) -->
-    <nav class="desktop-nav" id="desktopNav">
-        <a href="#home" class="nav-item active" data-section="home">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"></path>
-                <path d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-            </svg>
-            <span class="nav-label">Home</span>
-        </a>
-        <a href="#pricing" class="nav-item" data-section="pricing">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <rect width="20" height="14" x="2" y="5" rx="2"></rect>
-                <line x1="2" x2="22" y1="10" y2="10"></line>
-            </svg>
-            <span class="nav-label">Pricing</span>
-        </a>
-        <a href="#faq" class="nav-item" data-section="faq">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="10"></circle>
-                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
-                <path d="M12 17h.01"></path>
-            </svg>
-            <span class="nav-label">FAQ</span>
-        </a>
-        <button class="nav-item" id="userNavBtn" onclick="handleUserNavClick()">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="8" r="4"></circle>
-                <path d="M5.3 18.3c.6-2 2.4-3.3 4.7-3.3h4c2.3 0 4.1 1.3 4.7 3.3"></path>
-            </svg>
-            <span class="nav-label" id="loginLabel">Login</span>
-        </button>
-    </nav>
+    <!-- Navigation - Desktop -->
+<nav class="desktop-nav">
+    <a href="#home" class="nav-item active" data-section="home">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"></path>
+            <path d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+        </svg>
+        <span class="nav-label">Home</span>
+    </a>
+    <a href="#pricing" class="nav-item" data-section="pricing">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect width="20" height="14" x="2" y="5" rx="2"></rect>
+            <line x1="2" x2="22" y1="10" y2="10"></line>
+        </svg>
+        <span class="nav-label">Pricing</span>
+    </a>
+    <a href="#faq" class="nav-item" data-section="faq">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+            <path d="M12 17h.01"></path>
+        </svg>
+        <span class="nav-label">FAQ</span>
+    </a>
+    <button class="nav-item" id="userNavBtn" onclick="handleUserNavClick()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="8" r="4"></circle>
+            <path d="M5.3 18.3c.6-2 2.4-3.3 4.7-3.3h4c2.3 0 4.1 1.3 4.7 3.3"></path>
+        </svg>
+        <span class="nav-label" id="loginLabel">Login</span>
+    </button>
+</nav>
 
-    <!-- Navigation - Mobile (Selalu muncul) -->
-    <nav class="mobile-nav">
-        <a href="#home" class="mobile-nav-item active" data-section="home">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"></path>
-                <path d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-            </svg>
-        </a>
-        <a href="#pricing" class="mobile-nav-item" data-section="pricing">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <rect width="20" height="14" x="2" y="5" rx="2"></rect>
-                <line x1="2" x2="22" y1="10" y2="10"></line>
-            </svg>
-        </a>
-        <a href="#faq" class="mobile-nav-item" data-section="faq">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="10"></circle>
-                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
-                <path d="M12 17h.01"></path>
-            </svg>
-        </a>
-        <button class="mobile-nav-item" onclick="handleUserNavClick()">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="8" r="4"></circle>
-                <path d="M5.3 18.3c.6-2 2.4-3.3 4.7-3.3h4c2.3 0 4.1 1.3 4.7 3.3"></path>
-            </svg>
-        </button>
-    </nav>
+<!-- Navigation - Mobile -->
+<nav class="mobile-nav">
+    <a href="#home" class="mobile-nav-item active" data-section="home">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"></path>
+            <path d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+        </svg>
+    </a>
+    <a href="#pricing" class="mobile-nav-item" data-section="pricing">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect width="20" height="14" x="2" y="5" rx="2"></rect>
+            <line x1="2" x2="22" y1="10" y2="10"></line>
+        </svg>
+    </a>
+    <a href="#faq" class="mobile-nav-item" data-section="faq">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+            <path d="M12 17h.01"></path>
+        </svg>
+    </a>
+    <button class="mobile-nav-item" onclick="handleUserNavClick()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="8" r="4"></circle>
+            <path d="M5.3 18.3c.6-2 2.4-3.3 4.7-3.3h4c2.3 0 4.1 1.3 4.7 3.3"></path>
+        </svg>
+    </button>
+</nav>
 
     <main>
         <!-- Hero Section -->
@@ -84,11 +84,10 @@
             <div class="container">
                 <div class="hero-content">
                     <div class="logo-wrapper">
-                        <div class="logo">
-                            <span>P</span>
+                        <img src="img/logo.png" alt="Pevolution Logo" style="width: 100%; height: 100%; object-fit: contain;">
                         </div>
                     </div>
-                    
+
                     <div class="badge">
                         <span>PEVOLUTION</span>
                     </div>
@@ -105,7 +104,7 @@
                             <svg width="16" height="16" viewBox="0 0 127.14 96.36" fill="currentColor">
                                 <path d="M107.7,8.07A105.15,105.15,0,0,0,81.47,0a72.06,72.06,0,0,0-3.36,6.83A97.68,97.68,0,0,0,49,6.83,72.37,72.37,0,0,0,45.64,0,105.89,105.89,0,0,0,19.39,8.09C2.79,32.65-1.71,56.6.54,80.21h0A105.73,105.73,0,0,0,32.71,96.36,77.11,77.11,0,0,0,39.6,85.25a68.42,68.42,0,0,1-10.85-5.18c.91-.66,1.8-1.34,2.66-2a75.57,75.57,0,0,0,64.32,0c.87.71,1.76,1.39,2.66,2a68.68,68.68,0,0,1-10.87,5.19,77,77,0,0,0,6.89,11.1A105.25,105.25,0,0,0,126.6,80.22c1.24-21.43-8.88-46.12-18.9-72.15ZM42.45,65.69C36.18,65.69,31,60,31,53s5-12.74,11.43-12.74S54,46,53.89,53,48.84,65.69,42.45,65.69Zm42.24,0C78.41,65.69,73.25,60,73.25,53s5-12.74,11.44-12.74S96.23,46,96.12,53,91.08,65.69,84.69,65.69Z"></path>
                             </svg>
-                            <span>Join Community · <span id="memberCount">1,880</span> members</span>
+                            <span>Join Community · <span id="memberCount">0</span> members</span>
                         </a>
                     </div>
 
@@ -224,139 +223,73 @@
 
                     <!-- Tab Content: Get Key -->
                     <div id="getkeyTab" class="tab-content">
-                        <!-- PROVIDER GRID -->
-                        <div class="provider-grid">
-                            <!-- Premium Card -->
-                            <div class="provider-card premium" onclick="handlePremiumClick()">
-                                <div class="provider-header">
-                                    <span class="provider-title">Premium</span>
-                                    <span class="provider-badge paid">PAID</span>
-                                </div>
-                                <div class="provider-body">
-                                    <p class="provider-description">Get premium access with monthly key</p>
-                                    <div class="provider-features">
-                                        <div class="feature-item">
-                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                                <circle cx="12" cy="12" r="10"></circle>
-                                                <path d="M12 6v6l4 2"></path>
-                                            </svg>
-                                            <span>30 Days Duration</span>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="provider-footer">
-                                    <span class="price">$2.49/month</span>
-                                    <span class="external-link">↗</span>
-                                </div>
-                            </div>
 
-                            <!-- Work.ink Card (Free) -->
-                            <div class="provider-card workink" onclick="handleWorkinkClick()">
-                                <div class="provider-header">
-                                    <span class="provider-title">Work.ink</span>
-                                    <div class="provider-badge-group">
-                                        <span class="provider-badge free">FREE</span>
-                                        <span class="duration-tag">2H</span>
-                                    </div>
-                                </div>
-                                <div class="provider-body">
-                                    <p class="provider-description">Complete 1 link to get 2 hour key</p>
-                                    <div class="provider-features">
-                                        <div class="feature-item">
-                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                                <circle cx="12" cy="12" r="10"></circle>
-                                                <path d="M12 6v6l4 2"></path>
-                                            </svg>
-                                            <span>2 Hours Duration</span>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="provider-footer">
-                                    <span class="price">Free</span>
-                                    <span class="external-link">↗</span>
-                                </div>
-                            </div>
+    <!-- PROVIDERS -->
+    <div class="provider-grid">
 
-                            <!-- LootLabs Card -->
-                            <div class="provider-card inactive">
-                                <div class="provider-header">
-                                    <span class="provider-title">LootLabs</span>
-                                    <span class="provider-badge inactive">INACTIVE</span>
-                                </div>
-                                <div class="provider-body">
-                                    <p class="provider-description">Currently under maintenance</p>
-                                    <div class="provider-features">
-                                        <div class="feature-item">
-                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                                <circle cx="12" cy="12" r="10"></circle>
-                                                <path d="M12 6v6l4 2"></path>
-                                            </svg>
-                                            <span>Coming Soon</span>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="provider-footer inactive">
-                                    <span class="price">Temporarily Unavailable</span>
-                                </div>
-                            </div>
-
-                            <!-- Linkvertise Card -->
-                            <div class="provider-card inactive">
-                                <div class="provider-header">
-                                    <span class="provider-title">Linkvertise</span>
-                                    <span class="provider-badge inactive">INACTIVE</span>
-                                </div>
-                                <div class="provider-body">
-                                    <p class="provider-description">Currently under maintenance</p>
-                                    <div class="provider-features">
-                                        <div class="feature-item">
-                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                                <circle cx="12" cy="12" r="10"></circle>
-                                                <path d="M12 6v6l4 2"></path>
-                                            </svg>
-                                            <span>Coming Soon</span>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="provider-footer inactive">
-                                    <span class="price">Temporarily Unavailable</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- REDEEM CARD -->
-                        <div class="redeem-card">
-                            <div class="redeem-header">
-                                <div class="redeem-icon">🎁</div>
-                                <h3>Redeem Key</h3>
-                            </div>
-
-                            <p class="redeem-subtext">
-                                Have a key code? Enter it below to claim it to your account
-                            </p>
-
-                            <div class="redeem-input-group">
-                                <input 
-                                    type="text"
-                                    id="keyInput"
-                                    class="redeem-input"
-                                    placeholder="PEVO-XXXX-XXXX-XXXX"
-                                    disabled
-                                >
-                                <button 
-                                    class="redeem-button"
-                                    onclick="redeemKey()"
-                                    disabled
-                                >✓ Redeem</button>
-                            </div>
-
-                            <div class="redeem-warning auth-required">
-                                ⚠ Sign in to redeem keys
-                            </div>
-                        </div>
-                    </div>
-                </div>
+        <div class="provider-card premium">
+            <div class="provider-title">
+                Premium
+                <span class="external">↗</span>
             </div>
+            <div class="provider-badge paid">PAID</div>
+        </div>
+
+        <div class="provider-card workink" onclick="handleWorkinkClick()">
+            <div class="provider-title">
+                Work.ink
+                <span class="external">↗</span>
+            </div>
+            <div class="provider-badge free">FREE</div>
+        </div>
+
+        <div class="provider-card inactive">
+            <div class="provider-title">
+                Loot Labs
+            </div>
+            <div class="provider-badge inactive">INACTIVE</div>
+        </div>
+
+    </div>
+
+    <!-- REDEEM CARD -->
+    <div class="redeem-card">
+
+        <div class="redeem-header">
+            <div class="redeem-icon">🎁</div>
+            <h3>Redeem Key</h3>
+        </div>
+
+        <p class="redeem-subtext">
+            Have a key code? Enter it below to claim it to your account
+        </p>
+
+        <div class="redeem-input-group">
+            <input 
+                type="text"
+                id="keyInput"
+                class="redeem-input"
+                placeholder="PEVO-XXXX-XXXX-XXXX"
+                disabled
+            >
+
+            <button 
+                class="redeem-button"
+                onclick="redeemKey()"
+                disabled
+            >
+                ✓ Redeem
+            </button>
+        </div>
+
+        <div class="redeem-warning auth-required">
+            ⚠ Sign in to redeem keys
+        </div>
+
+    </div>
+
+</div>
+
         </section>
 
         <!-- Pricing Section -->
@@ -428,60 +361,6 @@
         </div>
     </div>
 
-    <!-- Key Modal -->
-    <div class="modal-overlay" id="keyModal">
-        <div class="modal success">
-            <button class="modal-close" onclick="closeKeyModal()">×</button>
-            <h2>Your Key</h2>
-            <div style="margin:1rem 0;font-family:monospace;font-size:1.1rem;">
-                <span id="generatedKey"></span>
-            </div>
-            <p id="keyDuration" style="color:#aaa;font-size:0.9rem;"></p>
-            <button class="modal-btn" onclick="copyGeneratedKey()">Copy Key</button>
-        </div>
-    </div>
-
-    <!-- Profile Modal -->
-    <div class="modal-overlay" id="profileModal">
-        <div class="modal profile-modal">
-            <button class="modal-close" onclick="closeProfileModal()">×</button>
-            
-            <div class="profile-avatar-container">
-                <img id="profileAvatar" class="profile-avatar" src="" alt="Avatar">
-                <div class="profile-status-dot" id="profileStatusDot"></div>
-            </div>
-            
-            <h2 id="profileUsername" class="profile-username">Loading...</h2>
-            
-            <div class="profile-id" id="profileId">Discord ID: -</div>
-            
-            <div class="profile-status-badge" id="profileStatusContainer">
-                <span class="status-label">Status:</span>
-                <span id="profileStatus" class="status-value status-free">FREE</span>
-            </div>
-            
-            <div class="profile-stats">
-                <div class="profile-stat">
-                    <div class="profile-stat-value" id="profileKeyCount">0</div>
-                    <div class="profile-stat-label">Keys</div>
-                </div>
-                <div class="profile-stat">
-                    <div class="profile-stat-value" id="profileJoined">-</div>
-                    <div class="profile-stat-label">Joined</div>
-                </div>
-            </div>
-            
-            <button class="profile-logout-btn" onclick="logout()">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-                    <polyline points="16 17 21 12 16 7"></polyline>
-                    <line x1="21" x2="9" y1="12" y2="12"></line>
-                </svg>
-                Logout
-            </button>
-        </div>
-    </div>
-
     <!-- Access Denied -->
     <div class="access-denied" id="accessDenied">
         <div class="denied-content">
@@ -498,7 +377,40 @@
         </div>
     </div>
 
+    <div class="modal-overlay" id="keyModal">
+    <div class="modal success">
+        <button class="modal-close" onclick="closeKeyModal()">×</button>
+
+        <h2>Your Key</h2>
+
+        <div style="margin:1rem 0;font-family:monospace;font-size:1.1rem;">
+            <span id="generatedKey"></span>
+        </div>
+
+        <p id="keyDuration" style="color:#aaa;font-size:0.9rem;"></p>
+
+        <button class="modal-btn" onclick="copyGeneratedKey()">
+            Copy Key
+        </button>
+    </div>
+</div>
+
+
+    <div class="modal-overlay" id="profileModal">
+  <div class="modal profile-card-ui">
+    <button class="modal-close" onclick="closeProfileModal()">×</button>
+
+    <img id="profileAvatar" class="profile-avatar-big"/>
+
+    <h2 id="profileUsername"></h2>
+
+    <p id="profileId"></p>
+
+    <div id="profileStatus" class="status-badge"></div>
+
+  </div>
+</div>
+
     <script src="script.js"></script>
 </body>
 </html>
-
