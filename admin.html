@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Admin Panel</title>
+</head>
+<body>
+
+<h2>License Monitoring</h2>
+
+<button onclick="loadKeys()">Refresh</button>
+<button onclick="purge()">Purge Expired</button>
+
+<table border="1" id="table"></table>
+
+<script>
+
+const ADMIN_KEY = "SUPER_SECRET_ADMIN_KEY";
+
+function loadKeys() {
+    fetch("/api/admin/keys", {
+        headers: { "x-admin-key": ADMIN_KEY }
+    })
+    .then(res => res.json())
+    .then(data => {
+
+        const table = document.getElementById("table");
+        table.innerHTML = `
+        <tr>
+            <th>Select</th>
+            <th>Key</th>
+            <th>Status</th>
+            <th>Label</th>
+            <th>HWID</th>
+            <th>Expire</th>
+        </tr>`;
+
+        data.forEach(k => {
+            table.innerHTML += `
+            <tr>
+                <td><input type="checkbox" value="${k.key}"></td>
+                <td>${k.key}</td>
+                <td>${k.used ? "Used" : "Unused"}</td>
+                <td>${k.label || "-"}</td>
+                <td>${k.hwid || "-"}</td>
+                <td>${new Date(k.expiresAt).toLocaleString()}</td>
+            </tr>`;
+        });
+    });
+}
+
+function deleteSelected() {
+
+    const selected = [...document.querySelectorAll("input[type=checkbox]:checked")]
+        .map(cb => cb.value);
+
+    selected.forEach(key => {
+        fetch("/api/admin/delete", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "x-admin-key": ADMIN_KEY
+            },
+            body: JSON.stringify({ key })
+        });
+    });
+
+    alert("Deleted selected keys.");
+}
+
+function purge() {
+    fetch("/api/admin/purge", {
+        method: "POST",
+        headers: {
+            "x-admin-key": ADMIN_KEY
+        }
+    })
+    .then(() => alert("Expired keys deleted."));
+}
+
+</script>
+
+<br>
+<button onclick="deleteSelected()">Delete Selected</button>
+
+</body>
+</html>
