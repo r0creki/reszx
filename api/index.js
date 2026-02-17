@@ -156,12 +156,18 @@ export default async function handler(req, res) {
   if (action === "free-key") {
     const { token } = req.query;
 
+    console.log("========== WORKINK CALLBACK ==========");
+  console.log("Raw token from URL:", token);
+  console.log("All query params:", req.query);
+  console.log("======================================");
+
     if (!token) {
       return res.redirect("/?error=no_token");
     }
 
     // Validation to pevolution- format
     if (!token.startsWith("pevolution-")) {
+      console.log("Token format invalid. Expected 'pevolution-*' but got:", token);
       return res.redirect("/?error=invalid_token");
     }
 
