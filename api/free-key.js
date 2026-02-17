@@ -6,107 +6,60 @@ import jwt from "jsonwebtoken";
 
 export default async function handler(req, res) {
 
-  // ==============================
-  // 🔁 WORKINK CALLBACK MODE
-  // ==============================
+  // ======================================
+  // 🔁 USER DATANG DARI WORKINK
+  // ======================================
   if (req.query.from === "workink") {
 
-    const token = jwt.sign(
-      { passed: true, time: Date.now() },
-      process.env.JWT_SECRET,
-      { expiresIn: "5m" }
-    );
-
-    res.setHeader(
-      "Set-Cookie",
-      `workink_pass=${token}; HttpOnly; Path=/; Max-Age=300`
-    );
-
-    return res.redirect("/?generate=free");
-  }
-
-  // ==============================
-  // 🔐 NORMAL FREE KEY GENERATION
-  // ==============================
-
-  if (req.method !== "GET")
-    return res.status(405).json({ error: "Method Not Allowed" });
-
-  try {
-
-    const token = req.cookies.token;
-    if (!token)
-      return res.status(401).json({ error: "Unauthorized" });
-
-    const user = verifyUser(token);
-    if (!user)
-      return res.status(401).json({ error: "Invalid Token" });
-
-    // ✅ wajib lewat workink
-    const workinkToken = req.cookies.workink_pass;
-    if (!workinkToken)
-      return res.status(403).json({ error: "Workink required" });
-
     try {
-      jwt.verify(workinkToken, process.env.JWT_SECRET);
-    } catch {
-      return res.status(403).json({ error: "Invalid Workink session" });
-    }
 
-    const ip =
-      req.headers["x-forwarded-for"]?.split(",")[0] ||
-      req.socket?.remoteAddress ||
-      "Unknown";
+      const token = req.cookies.token;
+      if (!token)
+        return res.redirect("/");
 
-    // cek existing active key
-    const { data: existing } = await supabase
-      .from("keys")
-      .select("*")
-      .eq("discord_id", user.id)
-      .gt("expires_at", Date.now())
-      .single();
+      const user = verifyUser(token);
+      if (!user)
+        return res.redirect("/");
 
-    if (existing) {
-      return res.json({ key: existing.key });
-    }
+      // cek existing
+      const { data: existing } = await supabase
+        .from("keys")
+        .select("*")
+        .eq("discord_id", user.id)
+        .gt("expires_at", Date.now())
+        .single();
 
-    // generate key
-    const key =
-      "PEVO-" +
-      crypto.randomBytes(6).toString("hex").toUpperCase();
+      if (existing) {
+        return res.redirect(`/?key=${existing.key}&exp=${existing.expires_at}`);
+      }
 
-    const expires = Date.now() + 2 * 60 * 60 * 1000;
+      // generate key baru
+      const key =
+        "PEVO-" +
+        crypto.randomBytes(6).toString("hex").toUpperCase();
 
-    await supabase.from("keys").insert({
-      key,
-      discord_id: user.id,
-      expires_at: expires,
-      created_at: Date.now(),
-      label: "Free",
-      failed_attempts: 0,
-      used: false
-    });
+      const expires = Date.now() + 2 * 60 * 60 * 1000;
 
-    if (process.env.DISCORD_WEBHOOK) {
-      await axios.post(process.env.DISCORD_WEBHOOK, {
-        embeds: [{
-          title: "🔑 Free Key Generated",
-          color: 5763719,
-          fields: [
-            { name: "User", value: user.username, inline: true },
-            { name: "Discord ID", value: user.id, inline: true },
-            { name: "IP", value: ip },
-            { name: "Key", value: key }
-          ],
-          timestamp: new Date().toISOString()
-        }]
+      await supabase.from("keys").insert({
+        key,
+        discord_id: user.id,
+        expires_at: expires,
+        created_at: Date.now(),
+        label: "Free",
+        failed_attempts: 0,
+        used: false
       });
+
+      return res.redirect(`/?key=${key}&exp=${expires}`);
+
+    } catch (err) {
+      console.error(err);
+      return res.redirect("/");
     }
-
-    res.json({ key });
-
-  } catch (err) {
-    console.error("FREE KEY ERROR:", err);
-    res.status(500).json({ error: "Server Error" });
   }
+
+  // ======================================
+  // 🚫 BLOCK DIRECT ACCESS
+  // ======================================
+  return res.status(403).json({ error: "Workink required" });
 }
