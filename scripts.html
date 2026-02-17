@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pevolution | Scripts</title>
+    <title>Scripts</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="icon" type="image/png" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3ClinearGradient id='grad' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%233b82f6'/%3E%3Cstop offset='100%25' stop-color='%2360a5fa'/%3E%3C/linearGradient%3E%3Crect width='100' height='100' rx='20' fill='url(%23grad)'/%3E%3Ctext x='50' y='70' font-size='60' font-weight='bold' text-anchor='middle' fill='%230a0a0f' font-family='Arial'%3EP%3C/text%3E%3C/svg%3E">
 </head>
@@ -15,67 +15,67 @@
         <div class="glow-spot"></div>
     </div>
 
-    <!-- Navigation - Desktop -->
-<nav class="desktop-nav">
-    <a href="index.html" class="nav-item active" data-section="home">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"></path>
-            <path d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-        </svg>
-        <span class="nav-label">Home</span>
-    </a>
-    <a href="index.html#pricing" class="nav-item" data-section="pricing">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <rect width="20" height="14" x="2" y="5" rx="2"></rect>
-            <line x1="2" x2="22" y1="10" y2="10"></line>
-        </svg>
-        <span class="nav-label">Pricing</span>
-    </a>
-    <a href="index.html#faq" class="nav-item" data-section="faq">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="10"></circle>
-            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
-            <path d="M12 17h.01"></path>
-        </svg>
-        <span class="nav-label">FAQ</span>
-    </a>
-    <button class="nav-item" id="userNavBtn" onclick="handleUserNavClick()">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="8" r="4"></circle>
-            <path d="M5.3 18.3c.6-2 2.4-3.3 4.7-3.3h4c2.3 0 4.1 1.3 4.7 3.3"></path>
-        </svg>
-        <span class="nav-label" id="loginLabel">Login</span>
-    </button>
-</nav>
+    <!-- Navigation - Desktop (Muncul saat scroll) -->
+    <nav class="desktop-nav" id="desktopNav">
+        <a href="index.html" class="nav-item active" data-section="home">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"></path>
+                <path d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+            </svg>
+            <span class="nav-label">Home</span>
+        </a>
+        <a href="index.html#pricing" class="nav-item" data-section="pricing">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect width="20" height="14" x="2" y="5" rx="2"></rect>
+                <line x1="2" x2="22" y1="10" y2="10"></line>
+            </svg>
+            <span class="nav-label">Pricing</span>
+        </a>
+        <a href="index.html#faq" class="nav-item" data-section="faq">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                <path d="M12 17h.01"></path>
+            </svg>
+            <span class="nav-label">FAQ</span>
+        </a>
+        <button class="nav-item" id="userNavBtn" onclick="handleUserNavClick()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="8" r="4"></circle>
+                <path d="M5.3 18.3c.6-2 2.4-3.3 4.7-3.3h4c2.3 0 4.1 1.3 4.7 3.3"></path>
+            </svg>
+            <span class="nav-label" id="loginLabel">Login</span>
+        </button>
+    </nav>
 
-<!-- Navigation - Mobile -->
-<nav class="mobile-nav">
-    <a href="index.html#home" class="mobile-nav-item active" data-section="home">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"></path>
-            <path d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-        </svg>
-    </a>
-    <a href="index.html#pricing" class="mobile-nav-item" data-section="pricing">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <rect width="20" height="14" x="2" y="5" rx="2"></rect>
-            <line x1="2" x2="22" y1="10" y2="10"></line>
-        </svg>
-    </a>
-    <a href="index.html#faq" class="mobile-nav-item" data-section="faq">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="10"></circle>
-            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
-            <path d="M12 17h.01"></path>
-        </svg>
-    </a>
-    <button class="mobile-nav-item" onclick="handleUserNavClick()">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="8" r="4"></circle>
-            <path d="M5.3 18.3c.6-2 2.4-3.3 4.7-3.3h4c2.3 0 4.1 1.3 4.7 3.3"></path>
-        </svg>
-    </button>
-</nav>
+    <!-- Navigation - Mobile -->
+    <nav class="mobile-nav">
+        <a href="index.html#home" class="mobile-nav-item active" data-section="home">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"></path>
+                <path d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+            </svg>
+        </a>
+        <a href="index.html#pricing" class="mobile-nav-item" data-section="pricing">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect width="20" height="14" x="2" y="5" rx="2"></rect>
+                <line x1="2" x2="22" y1="10" y2="10"></line>
+            </svg>
+        </a>
+        <a href="index.html#faq" class="mobile-nav-item" data-section="faq">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                <path d="M12 17h.01"></path>
+            </svg>
+        </a>
+        <button class="mobile-nav-item" onclick="handleUserNavClick()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="8" r="4"></circle>
+                <path d="M5.3 18.3c.6-2 2.4-3.3 4.7-3.3h4c2.3 0 4.1 1.3 4.7 3.3"></path>
+            </svg>
+        </button>
+    </nav>
 
     <main>
         <section class="scripts-header">
@@ -146,6 +146,7 @@
         </section>
     </main>
 
+    <!-- Auth Modal -->
     <div class="modal-overlay" id="authModal">
         <div class="modal">
             <button class="modal-close" onclick="closeAuthModal()">×</button>
@@ -166,6 +167,7 @@
         </div>
     </div>
 
+    <!-- Success Modal -->
     <div class="modal-overlay" id="successModal">
         <div class="modal success">
             <div class="modal-icon success">
@@ -180,6 +182,48 @@
         </div>
     </div>
 
+    <!-- Profile Modal (UPDATED) -->
+    <div class="modal-overlay" id="profileModal">
+        <div class="modal profile-modal">
+            <button class="modal-close" onclick="closeProfileModal()">×</button>
+            
+            <div class="profile-avatar-container">
+                <img id="profileAvatar" class="profile-avatar" src="" alt="Avatar">
+                <div class="profile-status-dot" id="profileStatusDot"></div>
+            </div>
+            
+            <h2 id="profileUsername" class="profile-username">Loading...</h2>
+            
+            <div class="profile-id" id="profileId">Discord ID: -</div>
+            
+            <div class="profile-status-badge" id="profileStatusContainer">
+                <span class="status-label">Status:</span>
+                <span id="profileStatus" class="status-value status-free">FREE</span>
+            </div>
+            
+            <div class="profile-stats">
+                <div class="profile-stat">
+                    <div class="profile-stat-value" id="profileKeyCount">0</div>
+                    <div class="profile-stat-label">Keys</div>
+                </div>
+                <div class="profile-stat">
+                    <div class="profile-stat-value" id="profileJoined">-</div>
+                    <div class="profile-stat-label">Joined</div>
+                </div>
+            </div>
+            
+            <button class="profile-logout-btn" onclick="logout()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                    <polyline points="16 17 21 12 16 7"></polyline>
+                    <line x1="21" x2="9" y1="12" y2="12"></line>
+                </svg>
+                Logout
+            </button>
+        </div>
+    </div>
+
+    <!-- Access Denied -->
     <div class="access-denied" id="accessDenied">
         <div class="denied-content">
             <div class="denied-icon">🔒</div>
@@ -195,29 +239,6 @@
         </div>
     </div>
 
-    <div class="modal-overlay" id="profileModal">
-    <div class="modal">
-        <button class="modal-close" onclick="closeProfileModal()">×</button>
-
-        <div style="display:flex;flex-direction:column;align-items:center;gap:1rem;">
-            <img id="profileAvatar"
-                 src=""
-                 style="width:80px;height:80px;border-radius:50%;border:2px solid #3b82f6;" />
-
-            <h2 id="profileUsername">Username</h2>
-            <p id="profileId" style="color:#aaa;font-size:0.85rem;"></p>
-
-            <button class="modal-btn" onclick="logout()">
-                Logout
-            </button>
-        </div>
-    </div>
-</div>
-
     <script src="script.js"></script>
-    <div class="user-dropdown" id="userDropdown">
-    <button onclick="logout()">Logout</button>
-</div>
-
 </body>
 </html>
