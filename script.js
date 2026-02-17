@@ -52,6 +52,10 @@ function closeAuthModal() {
     document.getElementById('authModal')?.classList.remove('active');
 }
 
+function closeSuccessModal() {
+    document.getElementById('successModal')?.classList.remove('active');
+}
+
 function updateScriptStats() {
     const totalGames = scriptDatabase.length;
     let totalExecutions = 0;
@@ -78,27 +82,31 @@ async function checkAuth() {
         if (!data.authenticated) {
             isAuthenticated = false;
             currentUser = null;
-            document.querySelectorAll('#loginLabel').forEach(l => l.textContent = "Login");
+            updateLoginButton("Login");
             return;
         }
 
         isAuthenticated = true;
         currentUser = data.user;
 
+        // Update UI untuk yang sudah login
         document.querySelectorAll('.auth-required').forEach(e => e.style.display = 'none');
         document.querySelectorAll('.key-input-field').forEach(e => e.disabled = false);
         document.querySelectorAll('.redeem-btn').forEach(e => e.disabled = false);
-        document.querySelectorAll('#loginLabel').forEach(l => l.textContent = data.user.username);
+        
+        // Update login button jadi username
+        updateLoginButton(data.user.username);
 
     } catch (err) {
         console.error("Auth check failed");
         isAuthenticated = false;
         currentUser = null;
+        updateLoginButton("Login");
     }
 }
 
-function closeSuccessModal() {
-    document.getElementById('successModal')?.classList.remove('active');
+function updateLoginButton(text) {
+    document.querySelectorAll('#loginLabel').forEach(l => l.textContent = text);
 }
 
 // ===== NAVIGATION =====
@@ -603,10 +611,14 @@ function openProfileModal() {
     document.getElementById("profileUsername").textContent = currentUser.username;
     document.getElementById("profileId").textContent = `Discord ID: ${currentUser.id}`;
     document.getElementById("profileModal").classList.add("active");
-    document.getElementById("profileStatus").textContent = "Status: " + (currentUser.status || "Free");
+    
+    const statusEl = document.getElementById("profileStatus");
+    if (statusEl) {
+        statusEl.textContent = "Status: " + (currentUser.status || "Free");
+    }
 }
 
-// ===== WORK.INK FUNCTIONS - FIXED =====
+// ===== WORK.INK FUNCTIONS =====
 async function handleWorkinkClick() {
     if (!isAuthenticated) {
         openAuthModal();
@@ -627,12 +639,7 @@ async function handleWorkinkClick() {
             throw new Error(data.error || "Failed to generate link");
         }
 
-        // Simpan timestamp
         localStorage.setItem('workink_start', Date.now().toString());
-        
-        // Inform user about 15 minutes
-        alert("You have 15 minutes to complete the Work.ink captcha. Don't close this tab!");
-        
         window.location.href = data.workink_url;
 
     } catch (error) {
@@ -642,7 +649,7 @@ async function handleWorkinkClick() {
     }
 }
 
-// Loading indicator - FIXED
+// Loading indicator
 let loadingCounter = 0;
 
 function showLoading(message) {
@@ -693,35 +700,19 @@ function checkWorkinkRedirect() {
                 message = 'Please log in first to get the key.';
                 openAuthModal();
                 break;
-            case 'token_used':
-                message = 'This link has already been used. Generate a new link.';
-                break;
-            case 'server_error':
-                message = 'Server error. Please try again later.';
-                break;
-            case 'no_token':
-                message = 'Token is invalid.';
-                break;
-            case 'ip_banned':
-                message = 'Your IP is blacklisted. Contact admin.';
-                break;
-            case 'invalid_token':
-                message = 'Invalid token format.';
-                break;
-            case 'invalid_session':
-                message = 'Invalid session. Please try again.';
-                break;
-            case 'already_used':
-                message = 'Session already used.';
-                break;
-            case 'session_expired':
-                message = 'Session expired. Please try again.';
-                break;
-            case 'no_token':
-                message = 'No token found.';
-                break;
             case 'user_mismatch':
                 message = 'User mismatch. Please login again.';
+                openAuthModal();
+                break;
+            case 'invalid_params':
+                message = 'Invalid parameters. Please try again.';
+                break;
+            case 'not_validated':
+                message = 'Workink validation failed. Please try again.';
+                break;
+            case 'invalid_token':
+                message = 'Invalid session. Please login again.';
+                openAuthModal();
                 break;
             default:
                 message = 'An error occurred. Please try again.';
@@ -756,4 +747,3 @@ window.copyGeneratedKey = copyGeneratedKey;
 window.closeProfileModal = closeProfileModal;
 window.handleWorkinkClick = handleWorkinkClick;
 window.handlePremiumClick = handlePremiumClick;
-
