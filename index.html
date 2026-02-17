@@ -3,11 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pevolution | Scripts</title>
+    <title>Pevolution | feel the evolution</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="icon" type="image/png" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3ClinearGradient id='grad' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%233b82f6'/%3E%3Cstop offset='100%25' stop-color='%2360a5fa'/%3E%3C/linearGradient%3E%3Crect width='100' height='100' rx='20' fill='url(%23grad)'/%3E%3Ctext x='50' y='70' font-size='60' font-weight='bold' text-anchor='middle' fill='%230a0a0f' font-family='Arial'%3EP%3C/text%3E%3C/svg%3E">
 </head>
 <body>
+    <!-- Background Effects -->
     <div class="background-effects">
         <div class="gradient-bg"></div>
         <div class="grid-lines"></div>
@@ -17,21 +18,21 @@
 
     <!-- Navigation - Desktop (Muncul saat scroll) -->
     <nav class="desktop-nav" id="desktopNav">
-        <a href="index.html" class="nav-item" data-section="home">
+        <a href="#home" class="nav-item active" data-section="home">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"></path>
                 <path d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
             </svg>
             <span class="nav-label">Home</span>
         </a>
-        <a href="index.html#pricing" class="nav-item" data-section="pricing">
+        <a href="#pricing" class="nav-item" data-section="pricing">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <rect width="20" height="14" x="2" y="5" rx="2"></rect>
                 <line x1="2" x2="22" y1="10" y2="10"></line>
             </svg>
             <span class="nav-label">Pricing</span>
         </a>
-        <a href="index.html#faq" class="nav-item" data-section="faq">
+        <a href="#faq" class="nav-item" data-section="faq">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="12" cy="12" r="10"></circle>
                 <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
@@ -50,19 +51,19 @@
 
     <!-- Navigation - Mobile (Selalu muncul) -->
     <nav class="mobile-nav">
-        <a href="index.html#home" class="mobile-nav-item" data-section="home">
+        <a href="#home" class="mobile-nav-item active" data-section="home">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"></path>
                 <path d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
             </svg>
         </a>
-        <a href="index.html#pricing" class="mobile-nav-item" data-section="pricing">
+        <a href="#pricing" class="mobile-nav-item" data-section="pricing">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <rect width="20" height="14" x="2" y="5" rx="2"></rect>
                 <line x1="2" x2="22" y1="10" y2="10"></line>
             </svg>
         </a>
-        <a href="index.html#faq" class="mobile-nav-item" data-section="faq">
+        <a href="#faq" class="mobile-nav-item" data-section="faq">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="12" cy="12" r="10"></circle>
                 <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
@@ -78,69 +79,314 @@
     </nav>
 
     <main>
-        <section class="scripts-header">
+        <!-- Hero Section -->
+        <section id="home" class="hero">
             <div class="container">
-                <div class="header-content">
-                    <div class="badge">SCRIPT LIBRARY</div>
+                <div class="hero-content">
+                    <div class="logo-wrapper">
+                        <div class="logo">
+                            <span>P</span>
+                        </div>
+                    </div>
+                    
+                    <div class="badge">
+                        <span>PEVOLUTION</span>
+                    </div>
+
                     <h1>
-                        <span class="light-text">Supported</span>
-                        <span class="bold-text">Games</span>
+                        <span class="light-text">Dominate Every Game</span><br>
+                        <span class="bold-text">With Pevolution.</span>
                     </h1>
-                    <p class="subtitle">Browse our collection of premium scripts for popular Roblox games. All scripts are undetected and regularly updated.</p>
+
+                    <p class="subtitle">Exclusive Roblox scripts with features you'll only find here, built for better performance and gameplay experience.</p>
+
+                    <div class="discord-row">
+                        <a href="https://discord.gg/BPBvVKK94r" target="_blank" class="discord-link">
+                            <svg width="16" height="16" viewBox="0 0 127.14 96.36" fill="currentColor">
+                                <path d="M107.7,8.07A105.15,105.15,0,0,0,81.47,0a72.06,72.06,0,0,0-3.36,6.83A97.68,97.68,0,0,0,49,6.83,72.37,72.37,0,0,0,45.64,0,105.89,105.89,0,0,0,19.39,8.09C2.79,32.65-1.71,56.6.54,80.21h0A105.73,105.73,0,0,0,32.71,96.36,77.11,77.11,0,0,0,39.6,85.25a68.42,68.42,0,0,1-10.85-5.18c.91-.66,1.8-1.34,2.66-2a75.57,75.57,0,0,0,64.32,0c.87.71,1.76,1.39,2.66,2a68.68,68.68,0,0,1-10.87,5.19,77,77,0,0,0,6.89,11.1A105.25,105.25,0,0,0,126.6,80.22c1.24-21.43-8.88-46.12-18.9-72.15ZM42.45,65.69C36.18,65.69,31,60,31,53s5-12.74,11.43-12.74S54,46,53.89,53,48.84,65.69,42.45,65.69Zm42.24,0C78.41,65.69,73.25,60,73.25,53s5-12.74,11.44-12.74S96.23,46,96.12,53,91.08,65.69,84.69,65.69Z"></path>
+                            </svg>
+                            <span>Join Community · <span id="memberCount">1,880</span> members</span>
+                        </a>
+                    </div>
+
+                    <div class="features">
+                        <div class="feature-item">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M20 6 9 17l-5-5"></path>
+                            </svg>
+                            <span>Undetected & Secure</span>
+                        </div>
+                        <div class="feature-item">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M20 6 9 17l-5-5"></path>
+                            </svg>
+                            <span>Multi-Platform Support</span>
+                        </div>
+                        <div class="feature-item">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M20 6 9 17l-5-5"></path>
+                            </svg>
+                            <span>Instant Updates</span>
+                        </div>
+                    </div>
+
+                    <!-- Main Tabs -->
+                    <div class="main-tabs">
+                        <button class="main-tab active" onclick="switchTab('loader')">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="m16 18 6-6-6-6"></path>
+                                <path d="m8 6-6 6 6 6"></path>
+                            </svg>
+                            <span>Loader</span>
+                        </button>
+                        <button class="main-tab" onclick="switchTab('getkey')">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="m15.5 7.5 2.3 2.3a1 1 0 0 0 1.4 0l2.1-2.1a1 1 0 0 0 0-1.4L19 4"></path>
+                                <path d="m21 2-9.6 9.6"></path>
+                                <circle cx="7.5" cy="15.5" r="5.5"></circle>
+                            </svg>
+                            <span>Get Key</span>
+                        </button>
+                        <a href="scripts.html" class="main-tab">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"></path>
+                                <path d="M14 2v5a1 1 0 0 0 1 1h5"></path>
+                                <path d="M10 12.5 8 15l2 2.5"></path>
+                                <path d="m14 12.5 2 2.5-2 2.5"></path>
+                            </svg>
+                            <span>Scripts</span>
+                        </a>
+                    </div>
+
+                    <!-- Tab Content: Loader -->
+                    <div id="loaderTab" class="tab-content active">
+                        <div class="provider-badges">
+                            <span class="provider-badge paid">PAID</span>
+                            <span class="provider-badge free">FREE</span>
+                            <span class="provider-badge inactive">INACTIVE</span>
+                        </div>
+
+                        <div class="script-loader">
+                            <div class="loader-window">
+                                <div class="window-header">
+                                    <div class="window-title">
+                                        <div class="window-dot"></div>
+                                        <span>pevolution - loader.lua</span>
+                                    </div>
+                                    <div class="window-controls">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M5 12h14"></path>
+                                        </svg>
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <rect width="18" height="18" x="3" y="3" rx="2"></rect>
+                                        </svg>
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M18 6 6 18"></path>
+                                            <path d="m6 6 12 12"></path>
+                                        </svg>
+                                    </div>
+                                </div>
+                                <div class="window-content">
+                                    <div class="code-line">
+                                        <span class="line-number">1</span>
+                                        <span class="line-content"><span class="comment">-- load pevolution universal loader</span></span>
+                                    </div>
+                                    <div class="code-line">
+                                        <span class="line-number">2</span>
+                                        <span class="line-content"><span class="function">loadstring</span>(<span class="function">game</span>:<span class="method">HttpGet</span>(</span>
+                                    </div>
+                                    <div class="code-line">
+                                        <span class="line-number">3</span>
+                                        <span class="line-content">    <span class="string encrypted-url">"https://pevolution.vercel.app/api/script/loader"</span></span>
+                                    </div>
+                                    <div class="code-line">
+                                        <span class="line-number">4</span>
+                                        <span class="line-content">))()</span>
+                                    </div>
+                                    <div class="code-line">
+                                        <span class="line-number">5</span>
+                                        <span class="line-content"><span class="cursor"></span></span>
+                                    </div>
+                                    <button class="copy-btn" onclick="copyLoaderScript()">
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect>
+                                            <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path>
+                                        </svg>
+                                        <span>Copy</span>
+                                    </button>
+                                </div>
+                                <div class="window-footer">
+                                    Ln 5, Col 1
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tab Content: Get Key -->
+                    <div id="getkeyTab" class="tab-content">
+                        <!-- PROVIDER GRID -->
+                        <div class="provider-grid">
+                            <!-- Premium Card -->
+                            <div class="provider-card premium" onclick="handlePremiumClick()">
+                                <div class="provider-header">
+                                    <span class="provider-title">Premium</span>
+                                    <span class="provider-badge paid">PAID</span>
+                                </div>
+                                <div class="provider-body">
+                                    <p class="provider-description">Get premium access with monthly key</p>
+                                    <div class="provider-features">
+                                        <div class="feature-item">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                                <circle cx="12" cy="12" r="10"></circle>
+                                                <path d="M12 6v6l4 2"></path>
+                                            </svg>
+                                            <span>30 Days Duration</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="provider-footer">
+                                    <span class="price">$2.49/month</span>
+                                    <span class="external-link">↗</span>
+                                </div>
+                            </div>
+
+                            <!-- Work.ink Card (Free) -->
+                            <div class="provider-card workink" onclick="handleWorkinkClick()">
+                                <div class="provider-header">
+                                    <span class="provider-title">Work.ink</span>
+                                    <div class="provider-badge-group">
+                                        <span class="provider-badge free">FREE</span>
+                                        <span class="duration-tag">2H</span>
+                                    </div>
+                                </div>
+                                <div class="provider-body">
+                                    <p class="provider-description">Complete 1 link to get 2 hour key</p>
+                                    <div class="provider-features">
+                                        <div class="feature-item">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                                <circle cx="12" cy="12" r="10"></circle>
+                                                <path d="M12 6v6l4 2"></path>
+                                            </svg>
+                                            <span>2 Hours Duration</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="provider-footer">
+                                    <span class="price">Free</span>
+                                    <span class="external-link">↗</span>
+                                </div>
+                            </div>
+
+                            <!-- LootLabs Card -->
+                            <div class="provider-card inactive">
+                                <div class="provider-header">
+                                    <span class="provider-title">LootLabs</span>
+                                    <span class="provider-badge inactive">INACTIVE</span>
+                                </div>
+                                <div class="provider-body">
+                                    <p class="provider-description">Currently under maintenance</p>
+                                    <div class="provider-features">
+                                        <div class="feature-item">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                                <circle cx="12" cy="12" r="10"></circle>
+                                                <path d="M12 6v6l4 2"></path>
+                                            </svg>
+                                            <span>Coming Soon</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="provider-footer inactive">
+                                    <span class="price">Temporarily Unavailable</span>
+                                </div>
+                            </div>
+
+                            <!-- Linkvertise Card -->
+                            <div class="provider-card inactive">
+                                <div class="provider-header">
+                                    <span class="provider-title">Linkvertise</span>
+                                    <span class="provider-badge inactive">INACTIVE</span>
+                                </div>
+                                <div class="provider-body">
+                                    <p class="provider-description">Currently under maintenance</p>
+                                    <div class="provider-features">
+                                        <div class="feature-item">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                                <circle cx="12" cy="12" r="10"></circle>
+                                                <path d="M12 6v6l4 2"></path>
+                                            </svg>
+                                            <span>Coming Soon</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="provider-footer inactive">
+                                    <span class="price">Temporarily Unavailable</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- REDEEM CARD -->
+                        <div class="redeem-card">
+                            <div class="redeem-header">
+                                <div class="redeem-icon">🎁</div>
+                                <h3>Redeem Key</h3>
+                            </div>
+
+                            <p class="redeem-subtext">
+                                Have a key code? Enter it below to claim it to your account
+                            </p>
+
+                            <div class="redeem-input-group">
+                                <input 
+                                    type="text"
+                                    id="keyInput"
+                                    class="redeem-input"
+                                    placeholder="PEVO-XXXX-XXXX-XXXX"
+                                    disabled
+                                >
+                                <button 
+                                    class="redeem-button"
+                                    onclick="redeemKey()"
+                                    disabled
+                                >✓ Redeem</button>
+                            </div>
+
+                            <div class="redeem-warning auth-required">
+                                ⚠ Sign in to redeem keys
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </section>
 
-        <section class="search-section">
+        <!-- Pricing Section -->
+        <section id="pricing" class="pricing-section">
             <div class="container">
-                <div class="search-container">
-                    <input type="text" id="searchInput" placeholder="Search games..." onkeyup="filterScripts()">
-                    <select id="statusFilter" onchange="filterScripts()">
-                        <option value="all">All Scripts</option>
-                        <option value="working">Working</option>
-                        <option value="maintenance">Maintenance</option>
-                    </select>
+                <div class="section-header">
+                    <h2>Choose a <span class="bold-text">Pricing Plan</span></h2>
+                    <p class="section-subtitle">Our pricing plans are tailored to fit your needs, offering flexible options that scale with your requirements.</p>
+                </div>
+
+                <div class="pricing-grid" id="pricingContainer"></div>
+
+                <div class="pricing-footer">
+                    <a href="#" class="view-all">View all pricing details →</a>
                 </div>
             </div>
         </section>
 
-        <section class="scripts-grid-section">
+        <!-- FAQ Section -->
+        <section id="faq" class="faq-section">
             <div class="container">
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <div class="stat-value" id="gamesCount">0</div>
-                        <div class="stat-label">Supported Games</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-value" id="executionsCount">0</div>
-                        <div class="stat-label">Total Executions</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-value">100%</div>
-                        <div class="stat-label">Undetected</div>
-                    </div>
+                <div class="section-header">
+                    <h2>Frequently Asked <span class="bold-text">Questions</span></h2>
+                    <p class="section-subtitle">Find answers to common questions about pevolution</p>
                 </div>
 
-                <div class="scripts-grid" id="scriptsGrid"></div>
-                
-                <div class="loading-state" id="loadingState">
-                    <div class="loader"></div>
-                    <p>Loading scripts...</p>
-                </div>
-            </div>
-        </section>
+                <div class="faq-container" id="faqContainer"></div>
 
-        <section class="request-section">
-            <div class="container">
-                <div class="request-card">
-                    <h3>Can't find your game?</h3>
-                    <p>Request your favorite game and our team will develop a script for it!</p>
-                    <a href="https://discord.gg/BPBvVKK94r" target="_blank" class="request-btn">
-                        <svg width="18" height="18" viewBox="0 0 127.14 96.36">
-                            <path d="M107.7,8.07A105.15,105.15,0,0,0,81.47,0a72.06,72.06,0,0,0-3.36,6.83A97.68,97.68,0,0,0,49,6.83,72.37,72.37,0,0,0,45.64,0,105.89,105.89,0,0,0,19.39,8.09C2.79,32.65-1.71,56.6.54,80.21h0A105.73,105.73,0,0,0,32.71,96.36,77.11,77.11,0,0,0,39.6,85.25a68.42,68.42,0,0,1-10.85-5.18c.91-.66,1.8-1.34,2.66-2a75.57,75.57,0,0,0,64.32,0c.87.71,1.76,1.39,2.66,2a68.68,68.68,0,0,1-10.87,5.19,77,77,0,0,0,6.89,11.1A105.25,105.25,0,0,0,126.6,80.22c1.24-21.43-8.88-46.12-18.9-72.15Z"></path>
-                        </svg>
-                        Request via Discord
-                    </a>
+                <div class="faq-footer">
+                    <p>Still have questions? <a href="https://discord.gg/BPBvVKK94r" target="_blank">Join our Discord</a></p>
                 </div>
             </div>
         </section>
@@ -157,7 +403,7 @@
                 </svg>
             </div>
             <h2>Login Required</h2>
-            <p class="modal-text">Please login with Discord to copy scripts.</p>
+            <p class="modal-text">Please login with Discord to get your key from Workink.</p>
             <button class="discord-auth-btn" onclick="authorizeDiscord()">
                 <svg width="20" height="20" viewBox="0 0 127.14 96.36">
                     <path d="M107.7,8.07A105.15,105.15,0,0,0,81.47,0a72.06,72.06,0,0,0-3.36,6.83A97.68,97.68,0,0,0,49,6.83,72.37,72.37,0,0,0,45.64,0,105.89,105.89,0,0,0,19.39,8.09C2.79,32.65-1.71,56.6.54,80.21h0A105.73,105.73,0,0,0,32.71,96.36,77.11,77.11,0,0,0,39.6,85.25a68.42,68.42,0,0,1-10.85-5.18c.91-.66,1.8-1.34,2.66-2a75.57,75.57,0,0,0,64.32,0c.87.71,1.76,1.39,2.66,2a68.68,68.68,0,0,1-10.87,5.19,77,77,0,0,0,6.89,11.1A105.25,105.25,0,0,0,126.6,80.22c1.24-21.43-8.88-46.12-18.9-72.15Z"></path>
@@ -179,6 +425,19 @@
             <h2>Welcome!</h2>
             <p class="modal-text">You have successfully logged in with Discord.</p>
             <button class="modal-btn" onclick="closeSuccessModal()">Continue</button>
+        </div>
+    </div>
+
+    <!-- Key Modal -->
+    <div class="modal-overlay" id="keyModal">
+        <div class="modal success">
+            <button class="modal-close" onclick="closeKeyModal()">×</button>
+            <h2>Your Key</h2>
+            <div style="margin:1rem 0;font-family:monospace;font-size:1.1rem;">
+                <span id="generatedKey"></span>
+            </div>
+            <p id="keyDuration" style="color:#aaa;font-size:0.9rem;"></p>
+            <button class="modal-btn" onclick="copyGeneratedKey()">Copy Key</button>
         </div>
     </div>
 
