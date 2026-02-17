@@ -13,5 +13,5 @@ export default function handler(req, res) {
     `workink_pass=${token}; HttpOnly; Path=/; Max-Age=120`
   );
 
-  res.redirect("/?generate=free");
+  res.redirect("/api/free-key");
 }
