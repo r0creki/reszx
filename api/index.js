@@ -20,7 +20,7 @@ function hashIp(ip) {
 
 // ==================== MAIN HANDLER ====================
 export default async function handler(req, res) {
-  const { action } = req.query; // ?action=login, ?action=me, ?action=free-key, ?action=workink-callback, dll
+  const { action } = req.query;
 
   // ========== LOGIN (Discord OAuth) ==========
   if (action === "login") {
@@ -97,7 +97,6 @@ export default async function handler(req, res) {
         .eq("banned", false)
         .maybeSingle();
 
-      // Tentukan status
       let status = "Free";
       if (activeKey) {
         if (activeKey.label === "Premium" || activeKey.label?.includes("Premium")) {
@@ -127,7 +126,7 @@ export default async function handler(req, res) {
     }
   }
 
-  // ========== WORKINK (Generate Workink URL) ==========
+  // ========== WORKINK (Generate Workink URL & Session) ==========
   if (action === "workink") {
     const token = req.cookies.token;
     if (!token) {
@@ -140,8 +139,29 @@ export default async function handler(req, res) {
         return res.status(401).json({ error: "Invalid token" });
       }
 
-      // URL Workink dengan format: https://work.ink/2jhr/pevolution-key
-      // TANPA {TOKEN} - Workink akan generate token sendiri
+      // Generate unique session ID
+      const sessionId = crypto.randomBytes(16).toString('hex');
+      const ip = req.headers['x-forwarded-for']?.split(',')[0] || 
+                 req.socket.remoteAddress || 
+                 'Unknown';
+
+      // Simpan session ke database
+      await supabase.from("workink_sessions").insert({
+        session_id: sessionId,
+        discord_id: user.id,
+        ip_address: ip,
+        created_at: Date.now(),
+        validated: false,
+        used: false
+      });
+
+      // Set cookie session (5 menit)
+      res.setHeader(
+        "Set-Cookie",
+        `workink_session=${sessionId}; HttpOnly; Path=/; Max-Age=300; SameSite=Lax${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`
+      );
+
+      // URL Workink
       const workinkUrl = `https://work.ink/2jhr/pevolution-key`;
 
       res.json({
@@ -156,85 +176,140 @@ export default async function handler(req, res) {
   }
 
   // ========== FREE-KEY (VALIDATION ENDPOINT) ==========
-  // Endpoint ini dipanggil oleh Work.ink untuk VALIDASI token
-  // URL: /api?action=free-key&token=ABC123 (token dari Work.ink)
- if (action === "free-key") {
-  const { token } = req.query;
+  if (action === "free-key") {
+    const { token } = req.query;
 
-  console.log("========== WORKINK VALIDATION ENDPOINT ==========");
-  console.log("1. Raw token from URL:", token);
-  console.log("2. All query params:", req.query);
-  console.log("3. Request headers:", {
-    userAgent: req.headers['user-agent'],
-    ip: req.headers['x-forwarded-for'] || req.socket.remoteAddress
-  });
-  console.log("================================================");
+    console.log("========== WORKINK VALIDATION ==========");
+    console.log("Token received:", token);
 
-  if (!token) {
-    console.log("4. ERROR: No token provided");
-    return res.status(400).json({ valid: false, error: "Token required" });
-  }
-
-  try {
-    console.log("4. Processing token:", token);
-    
-    // Catat token yang divalidasi
-    const ip = req.headers['x-forwarded-for']?.split(',')[0] || 
-               req.socket.remoteAddress || 
-               'Unknown';
-
-    console.log("5. IP Address:", ip);
-
-    // Simpan log validasi
-    try {
-      await supabase.from("verification_logs").insert({
-        key_text: "WORKINK_VALIDATION",
-        ip_address: ip,
-        success: true,
-        error_reason: `Token: ${token}`,
-        timestamp: Date.now()
-      });
-      console.log("6. Log saved to database");
-    } catch (dbError) {
-      console.error("6. Database error:", dbError.message);
-      // Tetap lanjutkan walau database error
+    if (!token) {
+      return res.status(400).json({ valid: false });
     }
 
-    // Return success ke Work.ink
-    console.log("7. Returning success response");
-    return res.status(200).json({ 
-      valid: true,
-      info: {
-        token: token,
-        validated_at: Date.now()
+    try {
+      // Ambil session dari cookie
+      const sessionId = req.cookies.workink_session;
+      
+      if (!sessionId) {
+        console.log("No session cookie found");
+        return res.status(400).json({ valid: false });
       }
-    });
 
-  } catch (error) {
-    console.error("❌ CATCH ERROR:", error);
-    console.error("Error message:", error.message);
-    console.error("Error stack:", error.stack);
-    
-    return res.status(500).json({ 
-      valid: false, 
-      error: "Server error",
-      details: error.message 
-    });
+      // Update session bahwa token sudah divalidasi
+      const { error } = await supabase
+        .from("workink_sessions")
+        .update({ 
+          workink_token: token,
+          validated: true,
+          validated_at: Date.now() 
+        })
+        .eq("session_id", sessionId);
+
+      if (error) {
+        console.error("Database error:", error);
+        return res.status(500).json({ valid: false });
+      }
+
+      console.log("Session updated, token valid");
+      
+      // Return success ke Work.ink
+      return res.json({ 
+        valid: true,
+        info: {
+          token: token,
+          validated_at: Date.now()
+        }
+      });
+
+    } catch (error) {
+      console.error("Validation error:", error);
+      return res.status(500).json({ valid: false });
+    }
   }
-}
 
   // ========== WORKINK-CALLBACK (DESTINATION URL) ==========
-  // Endpoint ini adalah DESTINATION URL setelah user selesai di Work.ink
-  // URL: /api?action=workink-callback
   if (action === "workink-callback") {
     console.log("========== WORKINK CALLBACK ==========");
-    console.log("User redirected from Work.ink");
 
     try {
       // ====================================================
-      // 1. AMBIL USER DARI COOKIE
+      // 1. CEK SESSION COOKIE
       // ====================================================
+      const sessionId = req.cookies.workink_session;
       const userToken = req.cookies.token;
+      const referer = req.headers.referer || '';
+      const ip = req.headers['x-forwarded-for']?.split(',')[0] || 
+                 req.socket.remoteAddress || 
+                 'Unknown';
+
+      console.log("Session ID:", sessionId);
+      console.log("Referer:", referer);
+      console.log("IP:", ip);
+
+      // Validasi 1: Harus ada session
+      if (!sessionId) {
+        console.log("BYPASS ATTEMPT: No session cookie");
+        return res.redirect("/?error=invalid_session");
+      }
+
+      // Validasi 2: Harus dari Work.ink (minimal pencegahan dasar)
+      if (!referer.includes('work.ink')) {
+        console.log("BYPASS ATTEMPT: Invalid referer", referer);
+        return res.redirect("/?error=invalid_source");
+      }
+
+      // ====================================================
+      // 2. CEK SESSION DI DATABASE
+      // ====================================================
+      const { data: session, error } = await supabase
+        .from("workink_sessions")
+        .select("*")
+        .eq("session_id", sessionId)
+        .single();
+
+      if (error || !session) {
+        console.log("BYPASS ATTEMPT: Session not found in database");
+        return res.redirect("/?error=invalid_session");
+      }
+
+      console.log("Session found:", {
+        discord_id: session.discord_id,
+        validated: session.validated,
+        used: session.used,
+        created_at: new Date(session.created_at).toISOString()
+      });
+
+      // Validasi 3: Token harus sudah divalidasi
+      if (!session.validated) {
+        console.log("BYPASS ATTEMPT: Token not validated");
+        return res.redirect("/?error=not_validated");
+      }
+
+      // Validasi 4: Session belum pernah dipakai
+      if (session.used) {
+        console.log("BYPASS ATTEMPT: Session already used");
+        return res.redirect("/?error=already_used");
+      }
+
+      // Validasi 5: Session tidak expired (5 menit)
+      if (Date.now() - session.created_at > 5 * 60 * 1000) {
+        console.log("BYPASS ATTEMPT: Session expired");
+        return res.redirect("/?error=session_expired");
+      }
+
+      // Validasi 6: IP harus sama (opsional, untuk keamanan ekstra)
+      if (session.ip_address !== ip) {
+        console.log("BYPASS ATTEMPT: IP mismatch", {
+          session_ip: session.ip_address,
+          current_ip: ip
+        });
+        // Bisa di-uncomment jika ingin strict
+        // return res.redirect("/?error=ip_mismatch");
+      }
+
+      // ====================================================
+      // 3. AMBIL USER DARI COOKIE
+      // ====================================================
       if (!userToken) {
         console.log("No user token found");
         return res.redirect("/?error=login_required");
@@ -246,20 +321,42 @@ export default async function handler(req, res) {
         return res.redirect("/?error=invalid_session");
       }
 
+      // Validasi 7: Discord ID harus sama dengan session
+      if (session.discord_id !== user.id) {
+        console.log("BYPASS ATTEMPT: User mismatch", {
+          session_user: session.discord_id,
+          current_user: user.id
+        });
+        return res.redirect("/?error=user_mismatch");
+      }
+
       console.log("User authenticated:", user.username);
 
       // ====================================================
-      // 2. DAPATKAN IP USER
+      // 4. TANDAI SESSION SUDAH DIPAKAI
       // ====================================================
-      const ip = req.headers['x-forwarded-for']?.split(',')[0] || 
-                 req.socket.remoteAddress || 
-                 'Unknown';
+      await supabase
+        .from("workink_sessions")
+        .update({ 
+          used: true,
+          used_at: Date.now(),
+          callback_ip: ip,
+          user_agent: req.headers['user-agent'] || 'Unknown'
+        })
+        .eq("session_id", sessionId);
+
+      // Bersihkan cookie session
+      res.setHeader(
+        "Set-Cookie",
+        `workink_session=; HttpOnly; Path=/; Max-Age=0; SameSite=Lax`
+      );
+
+      // ====================================================
+      // 5. CEK ATAU BUAT USER DI DATABASE
+      // ====================================================
       const ipHash = hashIp(ip);
       const userAgent = req.headers['user-agent'] || 'Unknown';
 
-      // ====================================================
-      // 3. CEK ATAU BUAT USER DI DATABASE
-      // ====================================================
       const { data: existingUser } = await supabase
         .from("users")
         .select("*")
@@ -288,7 +385,7 @@ export default async function handler(req, res) {
       }
 
       // ====================================================
-      // 4. CEK APAKAH USER SUDAH PUNYA KEY AKTIF
+      // 6. CEK APAKAH USER SUDAH PUNYA KEY AKTIF
       // ====================================================
       const { data: existingKey } = await supabase
         .from("keys")
@@ -304,7 +401,7 @@ export default async function handler(req, res) {
       }
 
       // ====================================================
-      // 5. GENERATE KEY BARU (2 JAM)
+      // 7. GENERATE KEY BARU (2 JAM)
       // ====================================================
       const key = generateKey();
       const expiresAt = Date.now() + 2 * 60 * 60 * 1000;
@@ -321,11 +418,12 @@ export default async function handler(req, res) {
         ip_address: ip,
         ip_hash: ipHash,
         last_used_at: Date.now(),
-        user_agent: userAgent
+        user_agent: userAgent,
+        workink_token: session.workink_token
       });
 
       // ====================================================
-      // 6. UPDATE TOTAL KEYS USER
+      // 8. UPDATE TOTAL KEYS USER
       // ====================================================
       await supabase
         .from("users")
@@ -335,7 +433,7 @@ export default async function handler(req, res) {
         .eq("discord_id", user.id);
 
       // ====================================================
-      // 7. LOG SUKSES
+      // 9. LOG SUKSES
       // ====================================================
       await supabase.from("verification_logs").insert({
         key_text: key,
@@ -344,15 +442,16 @@ export default async function handler(req, res) {
         ip_hash: ipHash,
         success: true,
         user_agent: userAgent,
+        workink_token: session.workink_token,
         timestamp: Date.now()
       });
 
       console.log("Key generated successfully, redirecting...");
       
       // ====================================================
-      // 8. REDIRECT KE HALAMAN UTAMA DENGAN KEY
+      // 10. REDIRECT KE HALAMAN UTAMA DENGAN KEY
       // ====================================================
-      return res.redirect(`/?key=${key}&exp=${expiresAt}`);
+      return res.redirect(`/?key=${key}&exp=${expiresAt}&source=workink`);
 
     } catch (error) {
       console.error("Workink callback error:", error);
