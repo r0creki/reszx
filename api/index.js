@@ -1,5 +1,5 @@
 import { supabase } from "../lib/supabase.js";
-import { verifyUser, signUser } from "../lib/auth.js";
+import jwt from "jsonwebtoken";
 import axios from "axios";
 import qs from "querystring";
 import crypto from "crypto";
@@ -18,8 +18,7 @@ function hashIp(ip) {
 
 async function getIpInfo(ip) {
   try {
-    // Gunakan ip-api.com untuk info lengkap (free, no API key)
-    const response = await axios.get(`http://ip-api.com/json/${ip}?fields=status,message,country,countryCode,region,regionName,city,zip,lat,lon,timezone,isp,org,as,query`);
+    const response = await axios.get(`http://ip-api.com/json/${ip}?fields=status,country,countryCode,region,regionName,city,zip,lat,lon,timezone,isp,org,as,query`);
     return response.data;
   } catch (error) {
     return null;
@@ -42,11 +41,11 @@ async function sendToWebhook(type, data) {
     timestamp: new Date().toISOString(),
     fields: Object.entries(data.fields || {}).map(([name, value]) => ({
       name,
-      value: String(value),
+      value: String(value).substring(0, 1024),
       inline: true
     })),
     footer: {
-      text: `Pevolution Logger • ${new Date().toLocaleString()}`
+      text: `Pevolution Logger`
     }
   }];
 
@@ -78,8 +77,7 @@ export default async function handler(req, res) {
         title: "🔐 Login Attempt",
         fields: {
           "IP Address": clientIp,
-          "User Agent": req.headers['user-agent'] || 'Unknown',
-          "Time": new Date().toLocaleString()
+          "User Agent": req.headers['user-agent'] || 'Unknown'
         }
       });
       
@@ -133,9 +131,8 @@ export default async function handler(req, res) {
           fields: {
             "User": `${user.username} (${user.id})`,
             "IP Address": clientIp,
-            "Location": ipInfo ? `${ipInfo.city}, ${ipInfo.country}` : 'Unknown',
-            "ISP": ipInfo?.isp || 'Unknown',
-            "Time": new Date().toLocaleString()
+            "Location": ipInfo ? `${ipInfo.city || 'Unknown'}, ${ipInfo.country || 'Unknown'}` : 'Unknown',
+            "ISP": ipInfo?.isp || 'Unknown'
           }
         });
 
@@ -147,8 +144,7 @@ export default async function handler(req, res) {
           title: "❌ Login Failed",
           fields: {
             "IP Address": clientIp,
-            "Error": error.message,
-            "Time": new Date().toLocaleString()
+            "Error": error.message
           }
         });
         return res.redirect("/");
@@ -204,10 +200,8 @@ export default async function handler(req, res) {
           fields: {
             "User": `${user.username} (${user.id})`,
             "IP Address": clientIp,
-            "Location": ipInfo ? `${ipInfo.city}, ${ipInfo.country}` : 'Unknown',
-            "ISP": ipInfo?.isp || 'Unknown',
-            "Link": workinkUrl,
-            "Time": new Date().toLocaleString()
+            "Location": ipInfo ? `${ipInfo.city || 'Unknown'}, ${ipInfo.country || 'Unknown'}` : 'Unknown',
+            "Link": workinkUrl
           }
         });
 
@@ -226,19 +220,9 @@ export default async function handler(req, res) {
       const ipInfo = await getIpInfo(clientIp);
       
       if (!token || !discord) {
-        await sendToWebhook("warning", {
-          title: "⚠️ Invalid Work.ink Validation",
-          fields: {
-            "IP Address": clientIp,
-            "Location": ipInfo ? `${ipInfo.city}, ${ipInfo.country}` : 'Unknown',
-            "Error": "Missing token or discord",
-            "Time": new Date().toLocaleString()
-          }
-        });
         return res.status(400).json({ valid: false });
       }
 
-      // Simpan ke database
       await supabase.from("workink_valid").insert({
         discord_id: discord,
         token: token,
@@ -255,9 +239,7 @@ export default async function handler(req, res) {
           "Discord ID": discord,
           "Token": token,
           "IP Address": clientIp,
-          "Location": ipInfo ? `${ipInfo.city}, ${ipInfo.country}` : 'Unknown',
-          "ISP": ipInfo?.isp || 'Unknown',
-          "Time": new Date().toLocaleString()
+          "Location": ipInfo ? `${ipInfo.city || 'Unknown'}, ${ipInfo.country || 'Unknown'}` : 'Unknown'
         }
       });
 
@@ -271,52 +253,20 @@ export default async function handler(req, res) {
       const ipInfo = await getIpInfo(clientIp);
 
       if (!uid || !discord) {
-        await sendToWebhook("warning", {
-          title: "⚠️ Invalid Callback Params",
-          fields: {
-            "IP Address": clientIp,
-            "Location": ipInfo ? `${ipInfo.city}, ${ipInfo.country}` : 'Unknown',
-            "Error": "Missing uid or discord",
-            "Time": new Date().toLocaleString()
-          }
-        });
         return res.redirect("/?error=invalid_params");
       }
 
-      // Cek apakah user sudah login
       if (!userToken) {
-        await sendToWebhook("warning", {
-          title: "⚠️ Callback Without Login",
-          fields: {
-            "IP Address": clientIp,
-            "Location": ipInfo ? `${ipInfo.city}, ${ipInfo.country}` : 'Unknown',
-            "Discord ID": discord,
-            "UID": uid,
-            "Time": new Date().toLocaleString()
-          }
-        });
         return res.redirect("/?error=login_required");
       }
 
       try {
         const user = jwt.verify(userToken, process.env.JWT_SECRET);
         
-        // Validasi discord ID harus sama
         if (user.id !== discord) {
-          await sendToWebhook("warning", {
-            title: "⚠️ User ID Mismatch",
-            fields: {
-              "IP Address": clientIp,
-              "Location": ipInfo ? `${ipInfo.city}, ${ipInfo.country}` : 'Unknown',
-              "Token User": user.id,
-              "Discord Param": discord,
-              "Time": new Date().toLocaleString()
-            }
-          });
           return res.redirect("/?error=user_mismatch");
         }
 
-        // Cek apakah sudah valid dari Workink (max 10 menit)
         const { data: valid } = await supabase
           .from("workink_valid")
           .select("*")
@@ -328,25 +278,14 @@ export default async function handler(req, res) {
           .maybeSingle();
 
         if (!valid) {
-          await sendToWebhook("warning", {
-            title: "⚠️ No Valid Work.ink Entry",
-            fields: {
-              "User": `${user.username} (${user.id})`,
-              "IP Address": clientIp,
-              "Location": ipInfo ? `${ipInfo.city}, ${ipInfo.country}` : 'Unknown',
-              "Time": new Date().toLocaleString()
-            }
-          });
           return res.redirect("/?error=not_validated");
         }
 
-        // Tandai sudah dipakai
         await supabase
           .from("workink_valid")
           .update({ used: true, used_at: Date.now() })
           .eq("id", valid.id);
 
-        // Cek apakah sudah punya key aktif
         const { data: existingKey } = await supabase
           .from("keys")
           .select("*")
@@ -355,23 +294,11 @@ export default async function handler(req, res) {
           .maybeSingle();
 
         if (existingKey) {
-          await sendToWebhook("info", {
-            title: "🔄 Existing Key Used",
-            fields: {
-              "User": `${user.username} (${user.id})`,
-              "Key": existingKey.key,
-              "Expires": new Date(existingKey.expires_at).toLocaleString(),
-              "IP Address": clientIp,
-              "Location": ipInfo ? `${ipInfo.city}, ${ipInfo.country}` : 'Unknown',
-              "Time": new Date().toLocaleString()
-            }
-          });
           return res.redirect(`/?key=${existingKey.key}&exp=${existingKey.expires_at}`);
         }
 
-        // Generate key baru
         const key = generateKey();
-        const expiresAt = Date.now() + 7200000; // 2 jam
+        const expiresAt = Date.now() + 7200000;
 
         await supabase.from("keys").insert({
           key: key,
@@ -391,26 +318,13 @@ export default async function handler(req, res) {
             "Key": key,
             "Expires": new Date(expiresAt).toLocaleString(),
             "IP Address": clientIp,
-            "Location": ipInfo ? `${ipInfo.city}, ${ipInfo.country}` : 'Unknown',
-            "ISP": ipInfo?.isp || 'Unknown',
-            "Timezone": ipInfo?.timezone || 'Unknown',
-            "User Agent": req.headers['user-agent'] || 'Unknown',
-            "Time": new Date().toLocaleString()
+            "Location": ipInfo ? `${ipInfo.city || 'Unknown'}, ${ipInfo.country || 'Unknown'}` : 'Unknown'
           }
         });
 
         return res.redirect(`/?key=${key}&exp=${expiresAt}`);
 
       } catch (error) {
-        await sendToWebhook("error", {
-          title: "❌ Key Generation Failed",
-          fields: {
-            "IP Address": clientIp,
-            "Location": ipInfo ? `${ipInfo.city}, ${ipInfo.country}` : 'Unknown',
-            "Error": error.message,
-            "Time": new Date().toLocaleString()
-          }
-        });
         return res.redirect("/?error=invalid_token");
       }
     }
@@ -422,8 +336,7 @@ export default async function handler(req, res) {
       title: "❌ Server Error",
       fields: {
         "IP Address": clientIp,
-        "Error": error.message,
-        "Time": new Date().toLocaleString()
+        "Error": error.message
       }
     });
     return res.status(500).json({ error: "Internal server error" });
