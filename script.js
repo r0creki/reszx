@@ -15,7 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
     encryptPaths();
     checkGenerateFromRedirect();
     checkWorkinkRedirect();
-    setupNavbarScroll(); // <-- TAMBAHKAN
+    setupNavbarScroll();
     
     // Load scripts if on scripts page
     if (document.getElementById('scriptsGrid')) {
@@ -289,7 +289,7 @@ function loadFAQ() {
         },
         {
             q: 'How do I get a license key?',
-            a: 'You can get a free key via Work.ink or purchase a premium key. Keys are bound to your device (HWID) for security.'
+            a: 'You can get a free key via Workink or purchase a premium key. Keys are bound to your device (HWID) for security.'
         },
         {
             q: 'Can I transfer my license?',
@@ -519,7 +519,6 @@ function copyScript(id) {
     });
 }
 
-// ===== ACCESS DENIED =====
 function showAccessDenied() {
     const denied = document.getElementById('accessDenied');
     if (!denied) return;
@@ -538,7 +537,6 @@ function showAccessDenied() {
     }, 1000);
 }
 
-// ===== ENCRYPTION =====
 function encryptPaths() {
     document.querySelectorAll('.encrypted-url').forEach(el => {
         el.textContent = '"' + '•'.repeat(30) + '"';
@@ -561,7 +559,7 @@ async function updateMemberCount() {
 }
 
 function authorizeDiscord() {
-    // UBAH: /api/login → /api?action=login
+   
     window.location.href = "/api?action=login";
 }
 
@@ -661,27 +659,26 @@ async function handleWorkinkClick() {
 
     try {
         // Tampilkan loading
-        const loadingId = showLoading("Generating Work.ink link...");
+        const loadingId = showLoading("Directing to Workink...");
 
-        // UBAH: /api/workink → /api?action=workink
+        // Panggil endpoint workink
         const response = await fetch("/api?action=workink", {
             credentials: "include"
         });
 
         const data = await response.json();
-
         hideLoading(loadingId);
 
         if (!response.ok) {
-            throw new Error(data.error || "Failed to generate link");
+            throw new Error(data.error || "Failed generate link");
         }
 
-        // Redirect ke Work.ink
+        // https://work.ink/2jhr/pevolution-{TOKEN}
         window.location.href = data.workink_url;
 
     } catch (error) {
         console.error("Workink error:", error);
-        alert("Failed to generate Work.ink link. Please try again.");
+        alert("Failed to generate link. Please try again.");
         hideLoading();
     }
 }
@@ -724,7 +721,7 @@ function handlePremiumClick() {
     window.open("https://discord.gg/BPBvVKK94r", "_blank");
 }
 
-// Fungsi checkWorkinkRedirect
+// Function checkWorkinkRedirect
 function checkWorkinkRedirect() {
     const params = new URLSearchParams(window.location.search);
     const key = params.get("key");
