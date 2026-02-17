@@ -2,12 +2,20 @@ import crypto from "crypto";
 import { supabase } from "../lib/supabase.js";
 import { verifyUser } from "../lib/auth.js";
 
+function generateKey() {
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  const part = () =>
+    Array.from({ length: 5 }, () =>
+      chars[Math.floor(Math.random() * chars.length)]
+    ).join("");
+
+  return `PEVO-${part()}-${part()}-${part()}`;
+}
+
 export default async function handler(req, res) {
 
-  // ❌ kalau bukan dari workink
-  if (req.query.from !== "workink") {
+  if (req.query.from !== "workink")
     return res.status(403).json({ error: "Workink required" });
-  }
 
   try {
 
@@ -17,7 +25,6 @@ export default async function handler(req, res) {
     const user = verifyUser(token);
     if (!user) return res.redirect("/");
 
-    // cek existing active key
     const { data: existing } = await supabase
       .from("keys")
       .select("*")
@@ -29,12 +36,7 @@ export default async function handler(req, res) {
       return res.redirect(`/?key=${existing.key}&exp=${existing.expires_at}`);
     }
 
-    // generate format PEVO-XXXXX-XXXXX-XXXXX
-    const part = () =>
-      crypto.randomBytes(3).toString("hex").toUpperCase();
-
-    const key = `PEVO-${part()}-${part()}-${part()}`;
-
+    const key = generateKey();
     const expires = Date.now() + 2 * 60 * 60 * 1000;
 
     await supabase.from("keys").insert({
@@ -43,8 +45,7 @@ export default async function handler(req, res) {
       expires_at: expires,
       created_at: Date.now(),
       label: "Free",
-      failed_attempts: 0,
-      used: false
+      used: true
     });
 
     return res.redirect(`/?key=${key}&exp=${expires}`);
