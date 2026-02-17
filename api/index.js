@@ -97,6 +97,18 @@ export default async function handler(req, res) {
         .eq("banned", false)
         .maybeSingle();
 
+      // Tentukan status
+      let status = "Free";
+      if (activeKey) {
+        if (activeKey.label === "Premium" || activeKey.label?.includes("Premium")) {
+          status = "Premium";
+        } else if (activeKey.label === "Exclusive") {
+          status = "Exclusive";
+        } else {
+          status = activeKey.label || "Free";
+        }
+      }
+
       return res.json({
         authenticated: true,
         user: {
@@ -105,7 +117,9 @@ export default async function handler(req, res) {
           avatar: user.avatar,
           is_admin: userData?.is_admin || false,
           is_banned: userData?.is_banned || false,
-          status: activeKey ? `Premium (${activeKey.label})` : "Free"
+          status: status,
+          total_keys: userData?.total_keys || 0,
+          created_at: userData?.created_at || null
         }
       });
     } catch (error) {
@@ -113,7 +127,6 @@ export default async function handler(req, res) {
     }
   }
 
-  // ========== WORKINK (Generate Workink URL) ==========
   if (action === "workink") {
     const token = req.cookies.token;
     if (!token) {
@@ -126,30 +139,16 @@ export default async function handler(req, res) {
         return res.status(401).json({ error: "Invalid token" });
       }
 
-      const timestamp = new Date().toISOString()
-        .replace(/[-:]/g, "")
-        .replace(/\.\d+Z$/, "z")
-        .toLowerCase();
+      const workinkUrl = `https://work.ink/2jhr/pevolution-{TOKEN}`;
 
-      const randomId = Math.random().toString(36).substring(2, 10);
-      const workinkToken = `pevolution-${timestamp}-${randomId}`;
-
-      res.setHeader(
-        "Set-Cookie",
-        `workink_token=${workinkToken}; HttpOnly; Path=/; Max-Age=300; SameSite=Lax${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`
-      );
-
-      const workinkUrl = `https://work.ink/2jhr/${workinkToken}`;
-
-      return res.json({
+      res.json({
         success: true,
-        workink_url: workinkUrl,
-        token: workinkToken,
-        expires_in: 300
+        workink_url: workinkUrl
       });
+
     } catch (err) {
       console.error("Workink error:", err);
-      return res.status(500).json({ error: "Internal Server Error" });
+      res.status(500).json({ error: "Internal Server Error" });
     }
   }
 
@@ -161,6 +160,7 @@ export default async function handler(req, res) {
       return res.redirect("/?error=no_token");
     }
 
+    // Validation to pevolution- format
     if (!token.startsWith("pevolution-")) {
       return res.redirect("/?error=invalid_token");
     }
@@ -211,7 +211,7 @@ export default async function handler(req, res) {
           .eq("discord_id", user.id);
       }
 
-      // Cek token sudah dipakai
+      // Check if token already used
       const { data: existingToken } = await supabase
         .from("workink_tokens")
         .select("*")
@@ -222,7 +222,7 @@ export default async function handler(req, res) {
         return res.redirect("/?error=token_used");
       }
 
-      // Simpan token
+      // Save token
       await supabase.from("workink_tokens").insert({
         token,
         discord_id: user.id,
@@ -233,7 +233,7 @@ export default async function handler(req, res) {
         user_agent: userAgent
       });
 
-      // Cek key aktif
+      // Validate key
       const { data: existingKey } = await supabase
         .from("keys")
         .select("*")
@@ -246,7 +246,7 @@ export default async function handler(req, res) {
         return res.redirect(`/?key=${existingKey.key}&exp=${existingKey.expires_at}`);
       }
 
-      // Generate key baru
+      // Generate new key (2 hour)
       const key = generateKey();
       const expiresAt = Date.now() + 2 * 60 * 60 * 1000;
 
@@ -380,7 +380,6 @@ export default async function handler(req, res) {
     }
   }
 
-  // ========== REDEEM (Redeem key) ==========
   if (action === "redeem") {
     if (req.method !== "POST") {
       return res.status(405).json({ error: "Method Not Allowed" });
@@ -441,6 +440,5 @@ export default async function handler(req, res) {
     }
   }
 
-  // Jika action tidak dikenal
   return res.status(400).json({ error: "Invalid action" });
 }
