@@ -105,7 +105,63 @@ export default async function handler(req, res) {
       });
     }
 
-    // Workink - Generate URL & Session
+    // Create Work.ink Link using API Key
+    if (action === "create-workink-link") {
+      const token = req.cookies.token;
+      if (!token) return res.status(401).json({ error: "Unauthorized" });
+
+      const user = verifyUser(token);
+      if (!user) return res.status(401).json({ error: "Invalid token" });
+
+      if (!process.env.WORKINK_API_KEY) {
+        return res.status(500).json({ error: "Work.ink API key not configured" });
+      }
+
+      try {
+        const response = await fetch("https://dashboard.work.ink/api/v1/link", {
+          method: "POST",
+          headers: {
+            "X-Api-Key": process.env.WORKINK_API_KEY,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            title: `Pevolution Key - ${user.username}`,
+            destination: "https://reszx.vercel.app/api?action=workink-callback",
+            link_description: "Get your free Pevolution key"
+          })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          return res.status(500).json({ error: data.message || "Failed to create link" });
+        }
+
+        const sessionId = crypto.randomBytes(16).toString('hex');
+        const ip = req.headers['x-forwarded-for']?.split(',')[0] || req.socket.remoteAddress || 'Unknown';
+
+        await supabase.from("workink_links").insert({
+          session_id: sessionId,
+          discord_id: user.id,
+          workink_url: data.url,
+          ip_address: ip,
+          created_at: Date.now(),
+          used: false
+        });
+
+        res.setHeader("Set-Cookie", `workink_session=${sessionId}; HttpOnly; Path=/; Max-Age=300; SameSite=Lax${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`);
+
+        return res.json({
+          success: true,
+          workink_url: data.url
+        });
+
+      } catch (error) {
+        return res.status(500).json({ error: "Failed to create Work.ink link" });
+      }
+    }
+
+    // Workink - Generate Session (for fixed link)
     if (action === "workink") {
       const token = req.cookies.token;
       if (!token) return res.status(401).json({ error: "Unauthorized" });
@@ -136,7 +192,7 @@ export default async function handler(req, res) {
       });
     }
 
-    // Free-key - Validation Endpoint (called by Work.ink)
+    // Free-key - Validation Endpoint
     if (action === "free-key") {
       const { token } = req.query;
       if (!token) return res.status(400).json({ valid: false });
@@ -337,7 +393,6 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: "Invalid action" });
 
   } catch (error) {
-    console.error("Server error:", error);
     return res.status(500).json({ error: "Internal server error" });
   }
 }
