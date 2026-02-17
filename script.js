@@ -570,6 +570,21 @@ function handleUserNavClick() {
     openProfileModal();
 }
 
+function closeProfileModal() {
+    document.getElementById("profileModal")?.classList.remove("active");
+}
+
+document.addEventListener("click", function (e) {
+  const profileModal = document.getElementById("profileModal");
+
+  if (!profileModal) return;
+
+  if (e.target === profileModal) {
+    closeProfileModal();
+  }
+});
+
+
 function openProfileModal() {
     if (!currentUser) return;
 
@@ -591,6 +606,8 @@ function openProfileModal() {
         `Discord ID: ${currentUser.id}`;
 
     document.getElementById("profileModal").classList.add("active");
+    document.getElementById("profileStatus").textContent =
+  "Status: " + currentUser.status;
 }
 
 // ===== EXPORT =====
@@ -607,3 +624,4 @@ window.filterScripts = filterScripts;
 window.copyScript = copyScript;
 window.closeKeyModal = closeKeyModal;
 window.copyGeneratedKey = copyGeneratedKey;
+window.closeProfileModal = closeProfileModal;
