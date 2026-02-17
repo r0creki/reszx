@@ -242,103 +242,112 @@ export default async function handler(req, res) {
     }
 
     // ========== WORKINK CALLBACK - GENERATE KEY ==========
-    if (action === "callback") {
-      console.log("========== WORKINK CALLBACK ==========");
-      console.log("Query params:", req.query);
-      console.log("Cookies:", req.cookies);
+if (action === "callback") {
+  console.log("========== WORKINK CALLBACK ==========");
+  console.log("Query params:", req.query);
+  console.log("Cookies:", req.cookies);
+  
+  const { uid, discord } = req.query;
+  const userToken = req.cookies.token;
+  
+  console.log("UID from Workink:", uid);
+  console.log("Discord from Workink:", discord);
+  console.log("User token exists:", !!userToken);
+
+  if (!uid) {
+    console.log("ERROR: Missing uid");
+    return res.redirect("/?error=invalid_params");
+  }
+
+  if (!userToken) {
+    console.log("ERROR: No user token - user not logged in");
+    return res.redirect("/?error=login_required");
+  }
+
+  try {
+    const user = jwt.verify(userToken, process.env.JWT_SECRET);
+    console.log("User from cookie token:", { id: user.id, username: user.username });
+    
+    // FALLBACK: Jika discord tidak ada di query, pakai dari token
+    const discordId = discord || user.id;
+    console.log("Using Discord ID:", discordId);
+    
+    // Validasi dengan pesan error yang jelas
+    if (user.id !== discordId) {
+      console.log("ERROR: User mismatch");
+      console.log("- Token user ID:", user.id);
+      console.log("- Discord from Workink:", discord);
+      console.log("- Discord used for validation:", discordId);
       
-      const { uid, discord } = req.query;
-      const userToken = req.cookies.token;
-      
-      console.log("UID:", uid);
-      console.log("Discord param:", discord);
-      console.log("User token exists:", !!userToken);
-
-      if (!uid || !discord) {
-        console.log("ERROR: Missing uid or discord");
-        return res.redirect("/?error=invalid_params");
-      }
-
-      if (!userToken) {
-        console.log("ERROR: No user token");
-        return res.redirect("/?error=login_required");
-      }
-
-      try {
-        const user = jwt.verify(userToken, process.env.JWT_SECRET);
-        console.log("User from token:", { id: user.id, username: user.username });
-        
-        // Validasi discord ID harus sama dengan token
-        if (user.id !== discord) {
-          console.log("ERROR: User mismatch", { tokenUser: user.id, discordParam: discord });
-          return res.redirect("/?error=user_mismatch");
-        }
-        console.log("Discord ID match");
-
-        // CEK APAKAH SUDAH PUNYA KEY AKTIF
-        console.log("Checking existing key for user:", user.id);
-        const { data: existingKey } = await supabase
-          .from("keys")
-          .select("*")
-          .eq("discord_id", user.id)
-          .gt("expires_at", Date.now())
-          .maybeSingle();
-
-        if (existingKey) {
-          console.log("User already has key:", existingKey.key);
-          return res.redirect(`/?key=${existingKey.key}&exp=${existingKey.expires_at}`);
-        }
-
-        // GENERATE KEY BARU
-        console.log("Generating new key...");
-        const key = generateKey();
-        const expiresAt = Date.now() + 7200000; // 2 jam
-        console.log("New key:", key);
-
-        const ipInfo = await getIpInfo(clientIp);
-
-        // SIMPAN KEY KE DATABASE
-        const { error: insertError } = await supabase.from("keys").insert({
-          key: key,
-          discord_id: user.id,
-          expires_at: expiresAt,
-          created_at: Date.now(),
-          used: true,
-          ip_address: clientIp,
-          ip_info: ipInfo,
-          user_agent: req.headers['user-agent']
-        });
-
-        if (insertError) {
-          console.error("Error saving key:", insertError);
-          return res.redirect("/?error=key_generation_failed");
-        }
-
-        console.log("Key saved to database");
-
-        // KIRIM WEBHOOK
-        await sendToWebhook("success", {
-          title: "✅ New Key Generated",
-          fields: {
-            "User": `${user.username} (${user.id})`,
-            "Key": key,
-            "Expires": new Date(expiresAt).toLocaleString(),
-            "IP Address": clientIp,
-            "📍 Location": ipInfo ? `${ipInfo.city || 'Unknown'}, ${ipInfo.country || 'Unknown'}` : 'Unknown',
-            "🏢 ISP": ipInfo?.isp || 'Unknown',
-            "🌐 Timezone": ipInfo?.timezone || 'Unknown',
-            "💻 User Agent": req.headers['user-agent'] || 'Unknown'
-          }
-        });
-
-        console.log("Redirecting with key:", `/?key=${key}&exp=${expiresAt}`);
-        return res.redirect(`/?key=${key}&exp=${expiresAt}`);
-
-      } catch (error) {
-        console.error("Workink callback error:", error);
-        return res.redirect("/?error=server_error");
-      }
+      return res.redirect("/?error=user_mismatch");
     }
+    
+    console.log("Discord ID match, proceeding...");
+
+    // CEK APAKAH SUDAH PUNYA KEY AKTIF
+    console.log("Checking existing key for user:", user.id);
+    const { data: existingKey } = await supabase
+      .from("keys")
+      .select("*")
+      .eq("discord_id", user.id)
+      .gt("expires_at", Date.now())
+      .maybeSingle();
+
+    if (existingKey) {
+      console.log("User already has key:", existingKey.key);
+      return res.redirect(`/?key=${existingKey.key}&exp=${existingKey.expires_at}`);
+    }
+
+    // GENERATE KEY BARU
+    console.log("Generating new key...");
+    const key = generateKey();
+    const expiresAt = Date.now() + 7200000; // 2 jam
+    console.log("New key:", key);
+
+    const ipInfo = await getIpInfo(clientIp);
+
+    // SIMPAN KEY KE DATABASE
+    const { error: insertError } = await supabase.from("keys").insert({
+      key: key,
+      discord_id: user.id,
+      expires_at: expiresAt,
+      created_at: Date.now(),
+      used: true,
+      ip_address: clientIp,
+      ip_info: ipInfo,
+      user_agent: req.headers['user-agent']
+    });
+
+    if (insertError) {
+      console.error("Error saving key:", insertError);
+      return res.redirect("/?error=key_generation_failed");
+    }
+
+    console.log("Key saved to database");
+
+    // KIRIM WEBHOOK
+    await sendToWebhook("success", {
+      title: "✅ New Key Generated",
+      fields: {
+        "User": `${user.username} (${user.id})`,
+        "Key": key,
+        "Expires": new Date(expiresAt).toLocaleString(),
+        "IP Address": clientIp,
+        "📍 Location": ipInfo ? `${ipInfo.city || 'Unknown'}, ${ipInfo.country || 'Unknown'}` : 'Unknown',
+        "🏢 ISP": ipInfo?.isp || 'Unknown',
+        "Workink UID": uid,
+        "Workink Discord": discord || 'not provided'
+      }
+    });
+
+    console.log("Redirecting with key:", `/?key=${key}&exp=${expiresAt}`);
+    return res.redirect(`/?key=${key}&exp=${expiresAt}`);
+
+  } catch (error) {
+    console.error("Workink callback error:", error);
+    return res.redirect("/?error=server_error");
+  }
+}
 
     return res.status(400).json({ error: "Invalid action" });
 
