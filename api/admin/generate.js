@@ -2,45 +2,35 @@ import { supabase } from "../../lib/supabase.js";
 
 function generateKey() {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-
-  const part = () =>
-    Array.from({ length: 5 }, () =>
-      chars[Math.floor(Math.random() * chars.length)]
-    ).join("");
-
+  const part = () => Array.from({ length: 5 }, () =>
+    chars[Math.floor(Math.random() * chars.length)]
+  ).join("");
   return `PEVO-${part()}-${part()}-${part()}`;
 }
 
 function parseDuration(input) {
   const num = parseInt(input);
-
   if (input.endsWith("mo")) return num * 30 * 24 * 60 * 60 * 1000;
   if (input.endsWith("y")) return num * 365 * 24 * 60 * 60 * 1000;
   if (input.endsWith("w")) return num * 7 * 24 * 60 * 60 * 1000;
   if (input.endsWith("d")) return num * 24 * 60 * 60 * 1000;
   if (input.endsWith("h")) return num * 60 * 60 * 1000;
   if (input.endsWith("m")) return num * 60 * 1000;
-
   return 0;
 }
 
 export default async function handler(req, res) {
-
-  console.log("ENV ADMIN:", process.env.ADMIN_KEY);
-console.log("HEADER ADMIN:", req.headers["x-admin-key"]);
-
-  // 🔒 Allow POST only
+  // Hanya allow POST
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method Not Allowed" });
   }
 
-  // 🔐 Admin auth
+  // Admin auth
   if (req.headers["x-admin-key"] !== process.env.ADMIN_KEY) {
     return res.status(403).json({ error: "Forbidden" });
   }
 
   try {
-
     const { duration, label } = req.body;
 
     if (!duration) {
@@ -60,23 +50,20 @@ console.log("HEADER ADMIN:", req.headers["x-admin-key"]);
     });
 
     if (error) {
-      console.error("Supabase Insert Error:", error);
-      return res.status(500).json({ error: "Database insert failed" });
+      console.error("Insert error:", error);
+      return res.status(500).json({ error: "Database error" });
     }
 
-    return res.status(200).json({
+    res.json({
       success: true,
       key,
       duration,
-      label: label || "Standard"
+      label: label || "Standard",
+      expires_at: expiresAt
     });
 
   } catch (err) {
-    console.error("Generate Error:", err);
-    return res.status(500).json({ error: "Internal Server Error" });
+    console.error("Generate error:", err);
+    res.status(500).json({ error: "Internal Server Error" });
   }
 }
-
-
-
-
