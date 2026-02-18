@@ -18,23 +18,64 @@ async function getIpInfo(ip) {
     const response = await axios.get(`http://ip-api.com/json/${ip}?fields=status,country,countryCode,region,regionName,city,zip,lat,lon,timezone,isp,org,as,asname,query,mobile,proxy,hosting`);
     if (response.data.status === 'success') return response.data;
     return null;
-  } catch { return null; }
+  } catch { 
+    return null; 
+  }
 }
 
 async function sendToWebhook(type, data) {
-  if (!process.env.WEBHOOK_DISCORD) return;
+  if (!process.env.WEBHOOK_DISCORD) {
+    console.log("Webhook URL not configured");
+    return;
+  }
+
   try {
-    const colors = { success: 0x00ff00, warning: 0xffaa00, error: 0xff0000, info: 0x0099ff };
-    await axios.post(process.env.WEBHOOK_DISCORD, {
-      embeds: [{
-        title: data.title,
-        color: colors[type] || colors.info,
-        timestamp: new Date().toISOString(),
-        fields: Object.entries(data.fields || {}).map(([n, v]) => ({ name: n, value: String(v).substring(0, 1024), inline: true })),
-        footer: { text: `Pevolution Logger` }
-      }]
+    new URL(process.env.WEBHOOK_DISCORD);
+  } catch (e) {
+    console.error("Invalid webhook URL");
+    return;
+  }
+
+  const colors = {
+    success: 0x00ff00,
+    warning: 0xffaa00,
+    error: 0xff0000,
+    info: 0x0099ff
+  };
+
+  const embed = {
+    title: data.title || `${type.toUpperCase()} - Pevolution`,
+    color: colors[type] || colors.info,
+    timestamp: new Date().toISOString(),
+    fields: [],
+    footer: { text: `Pevolution Logger` }
+  };
+
+  if (data.fields) {
+    for (const [name, value] of Object.entries(data.fields)) {
+      embed.fields.push({
+        name: name,
+        value: String(value).substring(0, 1024),
+        inline: true
+      });
+    }
+  }
+
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+    await fetch(process.env.WEBHOOK_DISCORD, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ embeds: [embed] }),
+      signal: controller.signal
     });
-  } catch (error) {}
+
+    clearTimeout(timeoutId);
+  } catch (error) {
+    // Silent fail - jangan ganggu response utama
+  }
 }
 
 export default async function handler(req, res) {
@@ -67,7 +108,6 @@ export default async function handler(req, res) {
       const today = now.toISOString().split('T')[0];
       const time = now.toTimeString().split(' ')[0];
 
-      // CEK APAKAH USER SUDAH ADA
       const { data: existingUser } = await supabase
         .from("users")
         .select("login_count")
@@ -75,7 +115,6 @@ export default async function handler(req, res) {
         .maybeSingle();
 
       if (existingUser) {
-        // UPDATE USER YANG SUDAH ADA
         await supabase
           .from("users")
           .update({
@@ -94,7 +133,6 @@ export default async function handler(req, res) {
           })
           .eq("discord_id", user.id);
       } else {
-        // INSERT USER BARU
         await supabase
           .from("users")
           .insert({
@@ -113,6 +151,18 @@ export default async function handler(req, res) {
             login_count: 1
           });
       }
+
+      sendToWebhook("success", {
+        title: "✅ User Logged In",
+        fields: {
+          "User": `${user.username} (${user.id})`,
+          "IP Address": clientIp,
+          "Location": ipInfo ? `${ipInfo.city || 'Unknown'}, ${ipInfo.country || 'Unknown'}` : 'Unknown',
+          "ISP": ipInfo?.isp || 'Unknown',
+          "Date": today,
+          "Time": time
+        }
+      }).catch(() => {});
 
       const jwtToken = signUser(user);
       res.setHeader("Set-Cookie", `token=${jwtToken}; HttpOnly; Path=/; Max-Age=604800; SameSite=Lax; Secure`);
@@ -133,6 +183,15 @@ export default async function handler(req, res) {
         response_type: "code",
         scope: "identify"
       });
+      
+      sendToWebhook("info", {
+        title: "🔐 Login Attempt",
+        fields: {
+          "IP Address": clientIp,
+          "User Agent": req.headers['user-agent'] || 'Unknown'
+        }
+      }).catch(() => {});
+
       return res.redirect(`https://discord.com/oauth2/authorize?${params}`);
     }
 
@@ -172,6 +231,16 @@ export default async function handler(req, res) {
       if (!user) return res.status(401).json({ error: "Invalid token" });
 
       const randomId = Math.random().toString(36).substring(2, 10);
+      
+      sendToWebhook("info", {
+        title: "🔄 Work.ink Link Generated",
+        fields: {
+          "User": `${user.username} (${user.id})`,
+          "IP Address": clientIp,
+          "UID": randomId
+        }
+      }).catch(() => {});
+
       return res.json({ 
         success: true, 
         workink_url: `https://work.ink/2jhr/pevolution-key?uid=${randomId}` 
@@ -184,7 +253,7 @@ export default async function handler(req, res) {
       return res.json({ valid: true });
     }
 
-    // ========== WORKINK CALLBACK - FIXED ==========
+    // ========== WORKINK CALLBACK ==========
     if (action === "callback") {
       console.log("========== WORKINK CALLBACK ==========");
       
@@ -199,7 +268,6 @@ export default async function handler(req, res) {
       
       console.log("User:", user.id, user.username);
 
-      // CEK ATAU BUAT USER
       const { data: existingUser } = await supabase
         .from("users")
         .select("*")
@@ -220,7 +288,6 @@ export default async function handler(req, res) {
         });
       }
 
-      // CEK KEY AKTIF
       const { data: existingKey } = await supabase
         .from("keys")
         .select("*")
@@ -230,17 +297,27 @@ export default async function handler(req, res) {
 
       if (existingKey) {
         console.log("User already has key:", existingKey.key);
+        
+        sendToWebhook("info", {
+          title: "🔄 Existing Key Used",
+          fields: {
+            "User": `${user.username} (${user.id})`,
+            "Key": existingKey.key,
+            "Expires": new Date(existingKey.expires_at).toLocaleString(),
+            "IP": clientIp,
+            "UID": uid
+          }
+        }).catch(() => {});
+
         return res.redirect(`/?key=${existingKey.key}&exp=${existingKey.expires_at}`);
       }
 
-      // GENERATE KEY BARU
       const key = generateKey();
-      const expiresAt = Date.now() + 7200000; // 2 jam
+      const expiresAt = Date.now() + 7200000;
       console.log("New key:", key);
 
       const ipInfo = await getIpInfo(clientIp);
 
-      // INSERT KEY
       const { error: insertError } = await supabase.from("keys").insert({
         key: key,
         discord_id: user.id,
@@ -257,7 +334,6 @@ export default async function handler(req, res) {
         return res.redirect("/?error=key_generation_failed");
       }
 
-      // UPDATE TOTAL KEYS USER (pakai select + update manual)
       if (existingUser) {
         await supabase
           .from("users")
@@ -270,21 +346,37 @@ export default async function handler(req, res) {
           .eq("discord_id", user.id);
       }
 
-      // WEBHOOK (optional)
-      await sendToWebhook("success", {
+      sendToWebhook("success", {
         title: "✅ New Key Generated",
         fields: {
           "User": `${user.username} (${user.id})`,
           "Key": key,
           "Expires": new Date(expiresAt).toLocaleString(),
-          "IP": clientIp,
-          "Location": ipInfo ? `${ipInfo.city}, ${ipInfo.country}` : 'Unknown',
+          "IP Address": clientIp,
+          "Location": ipInfo ? `${ipInfo.city || 'Unknown'}, ${ipInfo.country || 'Unknown'}` : 'Unknown',
+          "ISP": ipInfo?.isp || 'Unknown',
+          "Timezone": ipInfo?.timezone || 'Unknown',
+          "Device": ipInfo?.mobile ? 'Mobile' : (ipInfo?.proxy ? 'Proxy' : 'Desktop'),
           "UID": uid
         }
-      });
+      }).catch(() => {});
 
       console.log("Redirecting with key");
       return res.redirect(`/?key=${key}&exp=${expiresAt}`);
+    }
+
+    // ========== TEST WEBHOOK ==========
+    if (action === "test-webhook") {
+      sendToWebhook("info", {
+        title: "🧪 Test Webhook",
+        fields: {
+          "Message": "If you see this, webhook works!",
+          "Time": new Date().toLocaleString(),
+          "IP": clientIp
+        }
+      }).catch(() => {});
+
+      return res.json({ success: true, message: "Webhook sent (check Discord)" });
     }
 
     return res.status(400).json({ error: "Invalid action" });
