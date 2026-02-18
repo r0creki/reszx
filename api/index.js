@@ -14,7 +14,7 @@ function generateKey() {
 
 async function getIpInfo(ip) {
   try {
-    const response = await axios.get(`http://ip-api.com/json/${ip}?fields=status,message,country,countryCode,region,regionName,city,zip,lat,lon,timezone,isp,org,as,asname,query,mobile,proxy,hosting`);
+    const response = await axios.get(`http://ip-api.com/json/${ip}?fields=status,country,countryCode,region,regionName,city,zip,lat,lon,timezone,isp,org,as,asname,query,mobile,proxy,hosting`);
     
     if (response.data.status === 'success') {
       return {
@@ -80,6 +80,11 @@ export default async function handler(req, res) {
                    req.socket.remoteAddress || 
                    'Unknown';
 
+  console.log(`=== INCOMING REQUEST ===`);
+  console.log("URL:", req.url);
+  console.log("IP:", clientIp);
+  console.log("Cookies:", req.cookies);
+
   // ========== DISCORD OAUTH CALLBACK ==========
   if (req.url.startsWith('/api/callback')) {
     const { code } = req.query;
@@ -112,7 +117,7 @@ export default async function handler(req, res) {
       const time = now.toTimeString().split(' ')[0];
 
       // SIMPAN USER KE DATABASE
-      const { error: upsertError } = await supabase.from("users").upsert({
+      await supabase.from("users").upsert({
         discord_id: user.id,
         discord_username: user.username,
         discord_avatar: user.avatar,
@@ -152,11 +157,10 @@ export default async function handler(req, res) {
         ip_timezone: ipInfo?.timezone,
         user_agent: req.headers['user-agent'],
         event_date: today,
-        event_time: time,
-        details: { login_method: 'discord' }
+        event_time: time
       });
 
-      // WEBHOOK
+      // WEBHOOK LOGIN
       await sendToWebhook("success", {
         title: "✅ User Logged In",
         fields: {
@@ -182,6 +186,7 @@ export default async function handler(req, res) {
       return res.redirect("/");
       
     } catch (error) {
+      console.error("Discord OAuth error:", error);
       return res.redirect("/");
     }
   }
@@ -218,13 +223,11 @@ export default async function handler(req, res) {
       try {
         const user = jwt.verify(token, process.env.JWT_SECRET);
         
-        const today = new Date().toISOString().split('T')[0];
-        
         const { data: activeKey } = await supabase
           .from("keys")
-          .select("key, expire_date, expire_time, label")
+          .select("key, expires_at, label")
           .eq("discord_id", user.id)
-          .gte("expire_date", today)
+          .gt("expires_at", Date.now())
           .maybeSingle();
 
         return res.json({
@@ -235,7 +238,7 @@ export default async function handler(req, res) {
             avatar: user.avatar,
             hasKey: !!activeKey,
             key: activeKey?.key || null,
-            expires: activeKey ? `${activeKey.expire_date} ${activeKey.expire_time}` : null,
+            expires: activeKey?.expires_at || null,
             label: activeKey?.label || "Free"
           }
         });
@@ -278,6 +281,10 @@ export default async function handler(req, res) {
     if (action === "free-key") {
       const { token, discord } = req.query;
       
+      console.log("=== FREE-KEY VALIDATION ===");
+      console.log("Token:", token);
+      console.log("Discord:", discord);
+      
       if (!token || !discord) {
         return res.status(400).json({ valid: false });
       }
@@ -285,70 +292,59 @@ export default async function handler(req, res) {
       return res.json({ valid: true });
     }
 
-    // ========== WORKINK CALLBACK - GENERATE KEY ==========
+    // ========== WORKINK CALLBACK - GENERATE KEY (YANG WORK) ==========
     if (action === "callback") {
+      console.log("========== WORKINK CALLBACK ==========");
+      
       const { uid } = req.query;
       const userToken = req.cookies.token;
+      
+      console.log("UID from Workink:", uid);
+      console.log("User token exists:", !!userToken);
 
-      if (!uid) return res.redirect("/?error=invalid_params");
-      if (!userToken) return res.redirect("/?error=login_required");
+      if (!uid) {
+        return res.redirect("/?error=invalid_params");
+      }
+
+      if (!userToken) {
+        return res.redirect("/?error=login_required");
+      }
 
       try {
         const user = jwt.verify(userToken, process.env.JWT_SECRET);
-        const ipInfo = await getIpInfo(clientIp);
+        console.log("User from cookie:", user.id, user.username);
         
-        const now = new Date();
-        const today = now.toISOString().split('T')[0];
-        const time = now.toTimeString().split(' ')[0];
-        
-        const expireDate = new Date(now.getTime() + 2 * 60 * 60 * 1000);
-        const expireDateStr = expireDate.toISOString().split('T')[0];
-        const expireTimeStr = expireDate.toTimeString().split(' ')[0];
-
         // CEK KEY AKTIF
         const { data: existingKey } = await supabase
           .from("keys")
           .select("*")
           .eq("discord_id", user.id)
-          .gte("expire_date", today)
+          .gt("expires_at", Date.now())
           .maybeSingle();
 
         if (existingKey) {
-          return res.redirect(`/?key=${existingKey.key}&exp=${expireDate.getTime()}`);
+          console.log("User already has key:", existingKey.key);
+          return res.redirect(`/?key=${existingKey.key}&exp=${existingKey.expires_at}`);
         }
 
         // GENERATE KEY BARU
         const key = generateKey();
+        const expiresAt = Date.now() + 7200000; // 2 jam
+        console.log("New key:", key);
 
-        const { error: insertError } = await supabase.from("keys").insert({
+        const ipInfo = await getIpInfo(clientIp);
+
+        // SIMPAN KEY KE DATABASE
+        await supabase.from("keys").insert({
           key: key,
           discord_id: user.id,
-          label: "Free",
-          
-          created_date: today,
-          created_time: time,
-          expire_date: expireDateStr,
-          expire_time: expireTimeStr,
-          
+          expires_at: expiresAt,
+          created_at: Date.now(),
           used: true,
-          
           ip_address: clientIp,
-          ip_country: ipInfo?.country,
-          ip_region: ipInfo?.regionName,
-          ip_city: ipInfo?.city,
-          ip_isp: ipInfo?.isp,
-          ip_org: ipInfo?.org,
-          ip_asn: ipInfo?.as,
-          ip_timezone: ipInfo?.timezone,
-          ip_lat: ipInfo?.lat?.toString(),
-          ip_lon: ipInfo?.lon?.toString(),
-          
+          ip_info: ipInfo,
           user_agent: req.headers['user-agent']
         });
-
-        if (insertError) {
-          return res.redirect("/?error=key_generation_failed");
-        }
 
         // UPDATE TOTAL KEYS USER
         await supabase
@@ -357,6 +353,10 @@ export default async function handler(req, res) {
           .eq("discord_id", user.id);
 
         // LOG KE AUDIT
+        const now = new Date();
+        const today = now.toISOString().split('T')[0];
+        const time = now.toTimeString().split(' ')[0];
+
         await supabase.from("audit_logs").insert({
           event_type: 'key_generate',
           discord_id: user.id,
@@ -376,27 +376,28 @@ export default async function handler(req, res) {
           details: { uid: uid }
         });
 
-        // WEBHOOK LENGKAP
+        // WEBHOOK KEY GENERATED
         await sendToWebhook("success", {
           title: "✅ New Key Generated",
           fields: {
             "User": `${user.username} (${user.id})`,
             "Key": key,
-            "Created": `${today} ${time}`,
-            "Expires": `${expireDateStr} ${expireTimeStr}`,
+            "Expires": new Date(expiresAt).toLocaleString(),
             "IP Address": clientIp,
             "📍 Location": ipInfo ? `${ipInfo.city || 'Unknown'}, ${ipInfo.regionName || 'Unknown'}, ${ipInfo.country || 'Unknown'}` : 'Unknown',
             "🏢 ISP": ipInfo?.isp || 'Unknown',
             "🆔 ASN": ipInfo?.as || 'Unknown',
             "🌐 Timezone": ipInfo?.timezone || 'Unknown',
             "📱 Device": ipInfo?.mobile ? 'Mobile' : (ipInfo?.proxy ? 'Proxy' : 'Desktop'),
-            "🆔 UID": uid
+            "Workink UID": uid
           }
         });
 
-        return res.redirect(`/?key=${key}&exp=${expireDate.getTime()}`);
+        console.log("Redirecting with key");
+        return res.redirect(`/?key=${key}&exp=${expiresAt}`);
 
       } catch (error) {
+        console.error("Workink callback error:", error);
         return res.redirect("/?error=server_error");
       }
     }
@@ -404,6 +405,7 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: "Invalid action" });
 
   } catch (error) {
+    console.error("SERVER ERROR:", error);
     await sendToWebhook("error", {
       title: "❌ Server Error",
       fields: {
