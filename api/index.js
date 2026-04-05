@@ -23,15 +23,9 @@ async function getIpInfo(ip) {
 
 async function sendToWebhook(type, data) {
   if (!process.env.WEBHOOK_DISCORD) return;
-
-  try {
-    new URL(process.env.WEBHOOK_DISCORD);
-  } catch {
-    return;
-  }
+  try { new URL(process.env.WEBHOOK_DISCORD); } catch { return; }
 
   const colors = { success: 0x00ff00, warning: 0xffaa00, error: 0xff0000, info: 0x0099ff };
-
   const embed = {
     title: data.title || `${type.toUpperCase()} - Pevolution`,
     color: colors[type] || colors.info,
@@ -56,9 +50,7 @@ async function sendToWebhook(type, data) {
       signal: controller.signal
     });
     clearTimeout(timeoutId);
-  } catch {
-    // silent fail
-  }
+  } catch { /* silent fail */ }
 }
 
 export default async function handler(req, res) {
@@ -96,10 +88,7 @@ export default async function handler(req, res) {
         const time = now.toTimeString().split(" ")[0];
 
         const { data: existingUser } = await supabase
-          .from("users")
-          .select("login_count")
-          .eq("discord_id", user.id)
-          .maybeSingle();
+          .from("users").select("login_count").eq("discord_id", user.id).maybeSingle();
 
         if (existingUser) {
           await supabase.from("users").update({
@@ -248,10 +237,7 @@ export default async function handler(req, res) {
       if (!user) return res.redirect("/?error=invalid_token");
 
       const { data: existingUser } = await supabase
-        .from("users")
-        .select("*")
-        .eq("discord_id", user.id)
-        .maybeSingle();
+        .from("users").select("*").eq("discord_id", user.id).maybeSingle();
 
       if (!existingUser) {
         await supabase.from("users").insert({
@@ -267,11 +253,8 @@ export default async function handler(req, res) {
       }
 
       const { data: existingKey } = await supabase
-        .from("keys")
-        .select("*")
-        .eq("discord_id", user.id)
-        .gt("expires_at", Date.now())
-        .maybeSingle();
+        .from("keys").select("*").eq("discord_id", user.id)
+        .gt("expires_at", Date.now()).maybeSingle();
 
       if (existingKey) {
         sendToWebhook("info", {
@@ -325,6 +308,31 @@ export default async function handler(req, res) {
       }).catch(() => {});
 
       return res.redirect(`/?key=${key}&exp=${expiresAt}`);
+    }
+
+    // ========== DISCORD MEMBER COUNT ==========
+    if (action === "discord-members") {
+      try {
+        const guildId = process.env.DISCORD_GUILD_ID;
+        const botToken = process.env.DISCORD_BOT_TOKEN;
+
+        if (!guildId || !botToken) {
+          return res.json({ count: 0, online: 0 });
+        }
+
+        const response = await axios.get(
+          `https://discord.com/api/v10/guilds/${guildId}?with_counts=true`,
+          { headers: { Authorization: `Bot ${botToken}` } }
+        );
+
+        return res.json({
+          count: response.data.approximate_member_count,
+          online: response.data.approximate_presence_count
+        });
+
+      } catch {
+        return res.json({ count: 0, online: 0 });
+      }
     }
 
     // ========== TEST WEBHOOK ==========
