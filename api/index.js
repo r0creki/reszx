@@ -67,8 +67,14 @@ export default async function handler(req, res) {
 
     // ========== DISCORD OAUTH CALLBACK ==========
     if (action === "discord-callback") {
+  // Kalau ada guild_id, ini bot invite bukan user login
+      if (req.query.guild_id) {
+        return res.redirect("/?bot=invited");
+      }
+    
       const { code } = req.query;
       if (!code) return res.redirect("/");
+    
 
       try {
         const tokenResponse = await axios.post(
