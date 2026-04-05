@@ -2,29 +2,25 @@ import axios from "axios";
 
 export default async function handler(req, res) {
   try {
-    // Ganti dengan kode invite Discord Anda
-    const inviteCode = "BPBvVKK94r"; 
-    
-    // Panggil API Discord
-    const response = await axios.get(`https://discord.com/api/v10/invites/${inviteCode}?with_counts=true`);
-    
-    // Data dari Discord
-    const data = response.data;
-    
-    // Jumlah member
-    const memberCount = data.approximate_member_count || 0;
-    
-    // Kirim response
-    res.status(200).json({ 
-      count: memberCount
+    const guildId = process.env.DISCORD_GUILD_ID;
+    const botToken = process.env.DISCORD_BOT_TOKEN;
+
+    if (!guildId || !botToken) {
+      return res.status(500).json({ count: 0, online: 0, error: "Missing env vars" });
+    }
+
+    const response = await axios.get(
+      `https://discord.com/api/v10/guilds/${guildId}?with_counts=true`,
+      { headers: { Authorization: `Bot ${botToken}` } }
+    );
+
+    return res.json({
+      count: response.data.approximate_member_count,
+      online: response.data.approximate_presence_count
     });
-    
-  } catch (error) {
-    console.error("Discord API error:", error.response?.data || error.message);
-    
-    // Fallback jika error
-    res.status(200).json({ 
-      count: 290 // Angka default
-    });
+
+  } catch (err) {
+    console.error("Discord members error:", err.response?.data || err.message);
+    return res.status(500).json({ count: 0, online: 0 });
   }
 }
