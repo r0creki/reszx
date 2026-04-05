@@ -16,7 +16,6 @@ document.addEventListener('DOMContentLoaded', () => {
     checkWorkinkRedirect();
     setupNavbarScroll();
     
-    // Load scripts if on scripts page
     if (document.getElementById('scriptsGrid')) {
         loadScripts();
     }
@@ -27,19 +26,15 @@ function setupNavbarScroll() {
     const desktopNav = document.getElementById('desktopNav');
     if (!desktopNav) return;
     
-    let lastScrollTop = 0;
     const scrollThreshold = 100;
     
     window.addEventListener('scroll', () => {
         const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-        
         if (scrollTop > scrollThreshold) {
             desktopNav.classList.add('visible');
         } else {
             desktopNav.classList.remove('visible');
         }
-        
-        lastScrollTop = scrollTop;
     });
 }
 
@@ -52,61 +47,48 @@ function closeAuthModal() {
     document.getElementById('authModal')?.classList.remove('active');
 }
 
-function closeSuccessModal() {
-    document.getElementById('successModal')?.classList.remove('active');
-}
-
 function updateScriptStats() {
     const totalGames = scriptDatabase.length;
     let totalExecutions = 0;
-
     scriptDatabase.forEach(s => {
-        totalExecutions += parseInt(s.uses.replace(/,/g,'')) || 0;
+        totalExecutions += parseInt(s.uses.replace(/,/g, '')) || 0;
     });
 
     const gamesEl = document.getElementById("gamesCount");
     const execEl = document.getElementById("executionsCount");
-
     if (gamesEl) gamesEl.textContent = totalGames;
     if (execEl) execEl.textContent = totalExecutions.toLocaleString();
 }
 
 async function checkAuth() {
     try {
-        const res = await fetch("/api?action=me", {
-            credentials: "include"
-        });
-
+        const res = await fetch("/api?action=me", { credentials: "include" });
         const data = await res.json();
 
         if (!data.authenticated) {
             isAuthenticated = false;
             currentUser = null;
-            updateLoginButton("Login");
+            document.querySelectorAll('#loginLabel').forEach(l => l.textContent = "Login");
             return;
         }
 
         isAuthenticated = true;
         currentUser = data.user;
 
-        // Update UI untuk yang sudah login
         document.querySelectorAll('.auth-required').forEach(e => e.style.display = 'none');
         document.querySelectorAll('.key-input-field').forEach(e => e.disabled = false);
         document.querySelectorAll('.redeem-btn').forEach(e => e.disabled = false);
-        
-        // Update login button jadi username
-        updateLoginButton(data.user.username);
+        document.querySelectorAll('#loginLabel').forEach(l => l.textContent = data.user.username);
 
     } catch (err) {
         console.error("Auth check failed");
         isAuthenticated = false;
         currentUser = null;
-        updateLoginButton("Login");
     }
 }
 
-function updateLoginButton(text) {
-    document.querySelectorAll('#loginLabel').forEach(l => l.textContent = text);
+function closeSuccessModal() {
+    document.getElementById('successModal')?.classList.remove('active');
 }
 
 // ===== NAVIGATION =====
@@ -118,7 +100,6 @@ function setupScrollAnimation() {
         entries.forEach(entry => {
             if (entry.isIntersecting) {
                 entry.target.classList.add('visible');
-                
                 const id = entry.target.getAttribute('id');
                 if (id) {
                     navItems.forEach(item => {
@@ -150,15 +131,11 @@ function checkHash() {
 // ===== TABS =====
 function switchTab(tabName) {
     document.querySelectorAll('.main-tab').forEach(btn => {
-        if (btn.tagName === 'BUTTON') {
-            btn.classList.remove('active');
-        }
+        if (btn.tagName === 'BUTTON') btn.classList.remove('active');
     });
-    
     document.querySelectorAll('.tab-content').forEach(content => {
         content.classList.remove('active');
     });
-    
     event.target.closest('.main-tab').classList.add('active');
     document.getElementById(tabName + 'Tab').classList.add('active');
 }
@@ -221,7 +198,6 @@ function loadPricing() {
                     <small>USD</small>
                 </div>
                 <div class="pricing-period">${plan.period}</div>
-                
                 <div class="pricing-features">
                     <div class="features-header">BENEFIT (hover for details)</div>
                     <ul>
@@ -235,7 +211,6 @@ function loadPricing() {
                         `).join('')}
                     </ul>
                 </div>
-                
                 <button class="pricing-btn" onclick="handlePlanClick('${plan.name}', ${plan.price})">
                     ${plan.button}
                 </button>
@@ -307,7 +282,6 @@ function loadFAQ() {
 function toggleFaq(index) {
     const answer = document.getElementById(`faq-${index}`);
     const button = answer?.previousElementSibling;
-    
     if (answer && button) {
         answer.classList.toggle('show');
         button.classList.toggle('active');
@@ -336,17 +310,15 @@ async function redeemKey() {
     }
     
     try {
-        showLoading("Redeeming key...");
-        
+        const loadingId = showLoading("Redeeming key...");
         const response = await fetch("/api?action=redeem", {
             method: "POST",
             credentials: "include",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ key })
         });
-        
         const data = await response.json();
-        hideLoading();
+        hideLoading(loadingId);
         
         if (response.ok && data.success) {
             alert('✓ Key redeemed successfully!');
@@ -354,7 +326,6 @@ async function redeemKey() {
         } else {
             alert(data.error || 'Failed to redeem key');
         }
-        
     } catch (error) {
         hideLoading();
         console.error("Redeem error:", error);
@@ -377,7 +348,7 @@ function copyLoaderScript() {
     });
 }
 
-// ===== SCRIPTS =====
+// ===== SCRIPTS DATABASE =====
 const scriptDatabase = [
     {
         id: 'bf10d3b960442ff45c53ce9a2aa618b5',
@@ -412,14 +383,13 @@ function loadScripts() {
     const loading = document.getElementById('loadingState');
     const gamesCount = document.getElementById('gamesCount');
     const executionsCount = document.getElementById('executionsCount');
-    
     if (!grid) return;
     
-    loading.style.display = 'flex';
+    if (loading) loading.style.display = 'flex';
     grid.style.display = 'none';
     
     setTimeout(() => {
-        loading.style.display = 'none';
+        if (loading) loading.style.display = 'none';
         grid.style.display = 'grid';
         
         let html = '';
@@ -466,7 +436,7 @@ function loadScripts() {
         
         if (gamesCount) gamesCount.textContent = scriptDatabase.length;
         if (executionsCount) {
-            const total = scriptDatabase.reduce((acc, s) => acc + parseInt(s.uses.replace(',', '')), 0);
+            const total = scriptDatabase.reduce((acc, s) => acc + parseInt(s.uses.replace(/,/g, '')), 0);
             executionsCount.textContent = total.toLocaleString();
         }
         
@@ -508,11 +478,9 @@ function copyScript(id) {
 function showAccessDenied() {
     const denied = document.getElementById('accessDenied');
     if (!denied) return;
-    
     denied.classList.add('active');
     let seconds = 5;
     const countdown = document.getElementById('countdown');
-    
     const timer = setInterval(() => {
         seconds--;
         if (countdown) countdown.textContent = seconds;
@@ -536,7 +504,7 @@ async function updateMemberCount() {
         const data = await res.json();
 
         const el = document.getElementById('memberCount');
-        if (el) {
+        if (el && data.count) {
             el.textContent = data.count.toLocaleString();
         }
     } catch (e) {
@@ -544,6 +512,7 @@ async function updateMemberCount() {
     }
 }
 
+// ===== AUTH FUNCTIONS =====
 function authorizeDiscord() {
     window.location.href = "/api?action=login";
 }
@@ -552,13 +521,10 @@ async function checkGenerateFromRedirect() {
     const params = new URLSearchParams(window.location.search);
     const key = params.get("key");
     const exp = params.get("exp");
-
     if (!key || !exp) return;
 
     const expireDate = new Date(parseInt(exp));
-    const duration = expireDate.toLocaleString();
-
-    showKeyModal(key, duration);
+    showKeyModal(key, expireDate.toLocaleString());
     window.history.replaceState({}, document.title, "/");
 }
 
@@ -611,14 +577,10 @@ function openProfileModal() {
     document.getElementById("profileUsername").textContent = currentUser.username;
     document.getElementById("profileId").textContent = `Discord ID: ${currentUser.id}`;
     document.getElementById("profileModal").classList.add("active");
-    
-    const statusEl = document.getElementById("profileStatus");
-    if (statusEl) {
-        statusEl.textContent = "Status: " + (currentUser.status || "Free");
-    }
+    document.getElementById("profileStatus").textContent = "Status: " + (currentUser.status || "Free");
 }
 
-// ===== WORK.INK FUNCTIONS =====
+// ===== WORK.INK =====
 async function handleWorkinkClick() {
     if (!isAuthenticated) {
         openAuthModal();
@@ -627,19 +589,11 @@ async function handleWorkinkClick() {
 
     try {
         const loadingId = showLoading("Directing to Workink...");
-
-        const response = await fetch("/api?action=workink", {
-            credentials: "include"
-        });
-
+        const response = await fetch("/api?action=workink", { credentials: "include" });
         const data = await response.json();
         hideLoading(loadingId);
 
-        if (!response.ok) {
-            throw new Error(data.error || "Failed to generate link");
-        }
-
-        localStorage.setItem('workink_start', Date.now().toString());
+        if (!response.ok) throw new Error(data.error || "Failed to generate link");
         window.location.href = data.workink_url;
 
     } catch (error) {
@@ -649,13 +603,12 @@ async function handleWorkinkClick() {
     }
 }
 
-// Loading indicator
+// ===== LOADING =====
 let loadingCounter = 0;
 
 function showLoading(message) {
     loadingCounter++;
     const id = `loading-${loadingCounter}`;
-    
     const loader = document.createElement("div");
     loader.id = id;
     loader.className = "loading-overlay";
@@ -664,7 +617,6 @@ function showLoading(message) {
         <p>${message}</p>
     `;
     document.body.appendChild(loader);
-    
     return id;
 }
 
@@ -677,7 +629,7 @@ function hideLoading(id) {
     }
 }
 
-// Premium click handler
+// ===== PREMIUM =====
 function handlePremiumClick() {
     if (!isAuthenticated) {
         openAuthModal();
@@ -686,35 +638,43 @@ function handlePremiumClick() {
     window.open("https://discord.gg/BPBvVKK94r", "_blank");
 }
 
-// Check Workink redirect
-// ===== CHECK WORKINK REDIRECT =====
+// ===== WORKINK REDIRECT CHECK =====
 function checkWorkinkRedirect() {
     const params = new URLSearchParams(window.location.search);
     const key = params.get("key");
     const exp = params.get("exp");
-    
-    console.log("=== CHECK WORKINK REDIRECT ===");
-    console.log("URL Params:", {
-        key: key,
-        exp: exp,
-        all: Object.fromEntries(params.entries())
-    });
+    const error = params.get("error");
+
+    if (error) {
+        const messages = {
+            'login_required': 'Please log in first to get the key.',
+            'token_used': 'This link has already been used. Generate a new link.',
+            'server_error': 'Server error. Please try again later.',
+            'no_token': 'Token is invalid.',
+            'ip_banned': 'Your IP is blacklisted. Contact admin.',
+            'invalid_token': 'Invalid token format.',
+            'invalid_session': 'Invalid session. Please try again.',
+            'already_used': 'Session already used.',
+            'session_expired': 'Session expired. Please try again.',
+            'user_mismatch': 'User mismatch. Please login again.',
+            'invalid_params': 'Invalid parameters.',
+            'key_generation_failed': 'Key generation failed. Please try again.'
+        };
+        
+        const message = messages[error] || 'An error occurred. Please try again.';
+        alert(message);
+        window.history.replaceState({}, document.title, '/');
+        return;
+    }
 
     if (key && exp) {
-        console.log("KEY FOUND! Showing modal");
         const expireDate = new Date(parseInt(exp));
         showKeyModal(key, expireDate.toLocaleString());
         window.history.replaceState({}, document.title, '/');
-    } else {
-        console.log("NO KEY FOUND in URL");
-        // Hapus parameter dari URL biar bersih
-        if (params.toString()) {
-            window.history.replaceState({}, document.title, '/');
-        }
     }
 }
 
-// ===== EXPORT =====
+// ===== EXPORTS =====
 window.switchTab = switchTab;
 window.openAuthModal = openAuthModal;
 window.closeAuthModal = closeAuthModal;
@@ -731,4 +691,4 @@ window.copyGeneratedKey = copyGeneratedKey;
 window.closeProfileModal = closeProfileModal;
 window.handleWorkinkClick = handleWorkinkClick;
 window.handlePremiumClick = handlePremiumClick;
-
+window.handleUserNavClick = handleUserNavClick;
