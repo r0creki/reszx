@@ -499,19 +499,34 @@ function encryptPaths() {
 
 // ===== MEMBER COUNT =====
 async function updateMemberCount() {
+    const el = document.getElementById('memberCount');
+    if (!el) return;
+
     try {
         const res = await fetch('/api/discord-members');
+        if (!res.ok) throw new Error("API error");
+
         const data = await res.json();
 
-        const el = document.getElementById('memberCount');
-        if (el && data.count) {
+        if (data.count && data.count > 0) {
             el.textContent = data.count.toLocaleString();
+            // Simpan ke localStorage sebagai fallback
+            localStorage.setItem('memberCount', data.count);
+        } else {
+            throw new Error("Invalid count");
         }
+
     } catch (e) {
-        console.error("Failed to fetch member count");
+        // Coba ambil dari localStorage dulu
+        const cached = localStorage.getItem('memberCount');
+        if (cached) {
+            el.textContent = parseInt(cached).toLocaleString();
+        } else {
+            // Fallback terakhir kalau belum pernah fetch sama sekali
+            el.textContent = "...";
+        }
     }
 }
-
 // ===== AUTH FUNCTIONS =====
 function authorizeDiscord() {
     window.location.href = "/api?action=login";
